@@ -12,7 +12,7 @@ const CONFIG = {
 
   // General
   name: 'Leander',
-  imageBackground: false,
+  imageBackground: true,
   openInNewTab: true,
   twelveHourFormat: false,
 
@@ -82,7 +82,7 @@ const CONFIG = {
 
   //Icons
   firstListIcon: 'music',
-  secondListIcon: 'coffee',
+  secondListIcon: 'film',
 
   // Links
   lists: {
