@@ -48,7 +48,7 @@ const CONFIG = {
       id: '2',
       name: 'Mail',
       icon: 'mail',
-      link: 'https://mail.protonmail.com/',
+      link: 'https://mail.google.com/mail/u/0/#inbox',
     },
     {
       id: '3',
@@ -58,9 +58,9 @@ const CONFIG = {
     },
     {
       id: '4',
-      name: 'Calendar',
-      icon: 'calendar',
-      link: 'https://calendar.google.com/calendar/r',
+      name: 'YT Music',
+      icon: 'music',
+      link: 'https://music.youtube.com',
     },
     {
       id: '5',
@@ -71,8 +71,8 @@ const CONFIG = {
     {
       id: '6',
       name: 'Odysee',
-      icon: 'youtube',
-      link: 'https://odysee.com/',
+      icon: 'book-open',
+      link: 'https://ulricianum-aurich.de/iserv/',
     },
   ],
 
