@@ -88,20 +88,20 @@ const CONFIG = {
   lists: {
     firstList: [
       {
-        name: 'Inspirational',
-        link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        name: 'Deutschrap',
+        link: 'https://music.youtube.com/playlist?list=PLgSHzbVpv8Vo76Ryg4_CqbYCKdGXl1L46',
       },
       {
-        name: 'Classic',
-        link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      },
-      {
-        name: 'Oldies',
-        link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        name: 'P H O N K',
+        link: 'https://music.youtube.com/playlist?list=PLgSHzbVpv8VpeNwAEnNHWToqFyzgzuUYu',
       },
       {
         name: 'Rock',
-        link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        link: 'https://music.youtube.com/playlist?list=PLgSHzbVpv8VrRBwvxcjRKsXpLdc0KzmIw',
+      },
+      {
+        name: 'Piano',
+        link: 'https://music.youtube.com/playlist?list=RDCLAK5uy_m9Q7d0R2uoFHFOiomEkeHTZsHMzB-IVbM',
       },
     ],
     secondList: [
