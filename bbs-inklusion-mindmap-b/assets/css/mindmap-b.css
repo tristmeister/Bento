@@ -1,0 +1,476 @@
+/* ============================================================
+   BBS Wesermarsch – Inklusion Mindmap · Option B
+   "Focus Zoom Explorer" — card ripple-expand navigation
+   ============================================================ */
+
+:root {
+  --mm-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mm-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --mm-ease-in:  cubic-bezier(0.64, 0, 0.78, 0);
+  --mm-dur-expand: 0.52s;
+  --mm-dur-content: 0.38s;
+  --mm-dur-back: 0.38s;
+  --mm-radius-card: 16px;
+  --mm-shadow: 0 4px 24px rgba(0,0,0,0.13);
+  --mm-shadow-hover: 0 8px 36px rgba(0,0,0,0.20);
+}
+
+/* ── Wrapper ──────────────────────────────────────────────── */
+.bbs-mindmap-b {
+  position: relative;
+  width: 100%;
+  font-family: var(--mm-font);
+  overflow: hidden;
+  /* Height set to viewport on standalone, auto in WP */
+  min-height: 100vh;
+  background: #eef0f6;
+}
+
+/* ============================================================
+   SCREENS — full-size layers stacked on top of each other
+   ============================================================ */
+.mm-screen {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Home screen is the base */
+.mm-screen--home {
+  background: #eef0f6;
+  z-index: 1;
+}
+
+/* Category/sub screens layer on top */
+.mm-screen--detail {
+  z-index: 10;
+  background: var(--screen-color, #5c6bc0);
+  /* Hidden by default via clip-path */
+  clip-path: circle(0% at var(--origin-x, 50%) var(--origin-y, 50%));
+  pointer-events: none;
+}
+
+.mm-screen--detail.is-active {
+  pointer-events: auto;
+}
+
+/* Expand animation */
+@keyframes mmCircleExpand {
+  from { clip-path: circle(0%   at var(--origin-x) var(--origin-y)); }
+  to   { clip-path: circle(180% at var(--origin-x) var(--origin-y)); }
+}
+
+/* Collapse animation */
+@keyframes mmCircleCollapse {
+  from { clip-path: circle(180% at var(--origin-x) var(--origin-y)); }
+  to   { clip-path: circle(0%   at var(--origin-x) var(--origin-y)); }
+}
+
+.mm-screen--expanding {
+  animation: mmCircleExpand var(--mm-dur-expand) var(--mm-ease-out) forwards;
+}
+
+.mm-screen--collapsing {
+  animation: mmCircleCollapse var(--mm-dur-back) var(--mm-ease-in) forwards;
+}
+
+/* ============================================================
+   HOME SCREEN
+   ============================================================ */
+
+/* ── Hero ───────────────────────────────────────────────────── */
+.mm-hero {
+  background: linear-gradient(135deg, #5c6bc0 0%, #3f4fa8 100%);
+  padding: 48px 32px 36px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* decorative circles */
+.mm-hero::before,
+.mm-hero::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  pointer-events: none;
+}
+.mm-hero::before {
+  width: 280px; height: 280px;
+  top: -80px; right: -60px;
+}
+.mm-hero::after {
+  width: 180px; height: 180px;
+  bottom: -60px; left: -40px;
+}
+
+.mm-hero__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 10px;
+}
+
+.mm-hero__title {
+  font-size: clamp(20px, 4vw, 28px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+
+.mm-hero__sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.72);
+  margin: 0;
+}
+
+/* ── Home grid ──────────────────────────────────────────────── */
+.mm-home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 28px 24px 48px;
+  flex: 1;
+}
+
+@media (min-width: 700px) {
+  .mm-home-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1100px) {
+  .mm-home-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Home card ──────────────────────────────────────────────── */
+.mm-home-card {
+  border-radius: var(--mm-radius-card);
+  padding: 24px 22px 22px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--mm-shadow);
+  color: #fff;
+  transform: translateY(0) scale(1);
+  transition:
+    transform 0.22s var(--mm-ease-out),
+    box-shadow 0.22s var(--mm-ease-out);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Entrance animation */
+  opacity: 0;
+  animation: mmCardEntrance 0.5s var(--mm-ease-out) forwards;
+  animation-delay: var(--card-delay, 0s);
+}
+
+@keyframes mmCardEntrance {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+.mm-home-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--mm-shadow-hover);
+}
+
+.mm-home-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+/* decorative circle inside card */
+.mm-home-card::after {
+  content: '';
+  position: absolute;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.10);
+  bottom: -24px; right: -16px;
+  pointer-events: none;
+}
+
+.mm-home-card__icon {
+  font-size: 28px;
+  line-height: 1;
+  display: block;
+}
+
+.mm-home-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.mm-home-card__count {
+  font-size: 12px;
+  opacity: 0.78;
+  font-weight: 500;
+}
+
+.mm-home-card__arrow {
+  position: absolute;
+  top: 18px; right: 18px;
+  font-size: 20px;
+  opacity: 0.5;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.mm-home-card:hover .mm-home-card__arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* ============================================================
+   DETAIL SCREEN (category / sub-category)
+   ============================================================ */
+
+/* ── Top bar ─────────────────────────────────────────────────── */
+.mm-detail-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 16px 20px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(0,0,0,0.18);
+  backdrop-filter: blur(12px) saturate(1.6);
+  -webkit-backdrop-filter: blur(12px) saturate(1.6);
+  flex-shrink: 0;
+}
+
+.mm-back-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+.mm-back-btn:hover  { background: rgba(255,255,255,0.34); }
+.mm-back-btn:active { transform: scale(0.92); }
+
+.mm-topbar-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.mm-topbar-breadcrumb {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mm-topbar-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Hero inside detail screen ───────────────────────────────── */
+.mm-detail-hero {
+  padding: 36px 24px 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.mm-detail-hero__icon {
+  font-size: 44px;
+  display: block;
+  margin-bottom: 12px;
+  animation: mmIconPop 0.5s var(--mm-ease-out) 0.2s both;
+}
+
+@keyframes mmIconPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.mm-detail-hero__title {
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.25;
+  margin: 0 0 8px;
+  animation: mmFadeUp 0.4s var(--mm-ease-out) 0.25s both;
+}
+
+.mm-detail-hero__sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.72);
+  margin: 0;
+  animation: mmFadeUp 0.4s var(--mm-ease-out) 0.3s both;
+}
+
+@keyframes mmFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Item list ───────────────────────────────────────────────── */
+.mm-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 20px 48px;
+  flex: 1;
+}
+
+/* ── Item card ───────────────────────────────────────────────── */
+.mm-item-card {
+  background: rgba(255,255,255,0.16);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.2s var(--mm-ease-out);
+  color: #fff;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Staggered entrance */
+  opacity: 0;
+  animation: mmItemEntrance 0.4s var(--mm-ease-out) forwards;
+  animation-delay: var(--item-delay, 0s);
+}
+
+@keyframes mmItemEntrance {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mm-item-card:hover {
+  background: rgba(255,255,255,0.24);
+  transform: translateX(4px);
+}
+
+.mm-item-card:active {
+  transform: translateX(2px) scale(0.99);
+}
+
+.mm-item-card--leaf {
+  cursor: default;
+  background: rgba(255,255,255,0.12);
+}
+.mm-item-card--leaf:hover { transform: none; }
+
+/* Leaf with URL → clickable */
+.mm-item-card--link {
+  cursor: pointer;
+}
+
+.mm-item-card__dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+.mm-item-card__label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.mm-item-card__label.planned {
+  opacity: 0.65;
+  font-style: italic;
+}
+
+.mm-item-card__sub {
+  font-size: 12px;
+  opacity: 0.65;
+  margin-top: 2px;
+}
+
+.mm-item-card__chevron {
+  font-size: 18px;
+  opacity: 0.55;
+  flex-shrink: 0;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.mm-item-card:hover .mm-item-card__chevron {
+  transform: translateX(3px);
+  opacity: 0.9;
+}
+
+/* Section divider label */
+.mm-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  padding: 14px 20px 4px;
+  animation: mmFadeUp 0.35s var(--mm-ease-out) forwards;
+  opacity: 0;
+  animation-delay: var(--item-delay, 0s);
+}
+
+/* "Geplant" badge */
+.mm-badge-planned {
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 7px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.8);
+  margin-left: 4px;
+}
+
+/* ============================================================
+   Accessibility
+   ============================================================ */
+.mm-home-card:focus-visible,
+.mm-item-card:focus-visible,
+.mm-back-btn:focus-visible {
+  outline: 3px solid rgba(255,255,255,0.8);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .mm-screen--expanding,
+  .mm-screen--collapsing,
+  .mm-home-card,
+  .mm-item-card,
+  .mm-detail-hero__icon,
+  .mm-detail-hero__title,
+  .mm-detail-hero__sub {
+    animation: none !important;
+    clip-path: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

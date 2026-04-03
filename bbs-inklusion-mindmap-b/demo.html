@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>BBS Wesermarsch – Inklusion Mindmap · Option B</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/mindmap-b.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      overflow: hidden;
+    }
+
+    /* Fullscreen container */
+    #mindmap-app {
+      position: fixed;
+      inset: 0;
+    }
+
+    /* ── Demo chrome (top label, only on desktop) ── */
+    .demo-label {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 9999;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.6);
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      pointer-events: none;
+      font-family: 'Inter', sans-serif;
+    }
+
+    @media (max-width: 600px) {
+      .demo-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Demo label -->
+  <div class="demo-label">Option B · Demo</div>
+
+  <!-- The widget, fullscreen -->
+  <div id="mindmap-app"></div>
+
+  <script src="assets/js/mindmap-data.js"></script>
+  <script src="assets/js/mindmap-b.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      new BBSMindmapB(
+        document.getElementById('mindmap-app'),
+        BBS_MINDMAP_DATA
+      );
+    });
+  </script>
+</body>
+</html>
