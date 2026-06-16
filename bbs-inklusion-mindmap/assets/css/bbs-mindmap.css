@@ -166,10 +166,12 @@
 
 /* ── Zentrale Hub-Karte ───────────────────────────────────── */
 .mm-radial-center {
-  position:      absolute;
-  left:          50%;
-  top:           50%;
-  width:         clamp(200px, 36%, 340px);
+  position:  absolute;
+  left:      50%;
+  top:       50%;
+  /* Basis-Zentrierung — verhindert Positions-Sprung beim animation-delay */
+  transform: translate(-50%, -50%);
+  width:     clamp(200px, 36%, 340px);
   background:    linear-gradient(
                    135deg,
                    var(--node-color, #5c6bc0) 0%,
