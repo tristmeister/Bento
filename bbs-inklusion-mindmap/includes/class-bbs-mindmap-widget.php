@@ -4,6 +4,7 @@ namespace BBS_Mindmap;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
 use Elementor\Group_Control_Box_Shadow;
+use Elementor\Repeater;
 use Elementor\Widget_Base;
 
 defined( 'ABSPATH' ) || exit;
@@ -18,7 +19,7 @@ class Widget extends Widget_Base {
     public function get_script_depends(): array { return [ 'bbs-mindmap' ]; }
     public function get_style_depends(): array  { return [ 'bbs-mindmap' ]; }
 
-    /* ── Controls ──────────────────────────────────────────── */
+    /* ── Controls ──────────────────────────────────────────────── */
     protected function register_controls(): void {
         $this->tab_content();
         $this->tab_style();
@@ -26,31 +27,96 @@ class Widget extends Widget_Base {
 
     private function tab_content(): void {
 
-        /* Mindmap Daten */
-        $this->start_controls_section( 'sec_data', [
-            'label' => '📊 Mindmap Daten (JSON)',
+        /* ── Zentrale Karte ─────────────────────────────────────── */
+        $this->start_controls_section( 'sec_root', [
+            'label' => '🗺 Mindmap',
             'tab'   => Controls_Manager::TAB_CONTENT,
         ] );
 
-        $this->add_control( 'mindmap_json', [
-            'label'       => 'Struktur (JSON)',
-            'type'        => Controls_Manager::CODE,
-            'language'    => 'json',
-            'rows'        => 30,
-            'default'     => $this->default_json(),
-            'description' => '<strong>Aufbau jedes Knotens:</strong><br>
-                <code>label</code> – Anzeigetext (Pflicht)<br>
-                <code>color</code> – Hex-Farbe, z.B. <code>#e8a435</code><br>
-                <code>icon</code> – Emoji oder Text-Icon<br>
-                <code>url</code> – Verlinkung (öffnet in neuem Tab)<br>
-                <code>content</code> – HTML-Inhalt für Leaf-Panels<br>
-                <code>planned</code> – <code>true</code> = „Geplant"-Badge<br>
-                <code>children</code> – Array mit Unterknoten',
+        $this->add_control( 'root_label', [
+            'label'   => 'Haupttitel (Zentralkarte)',
+            'type'    => Controls_Manager::TEXT,
+            'default' => 'Inklusion an den BBS Wesermarsch',
+            'dynamic' => [ 'active' => true ],
+        ] );
+
+        $this->add_control( 'root_color', [
+            'label'   => 'Farbe Zentralkarte',
+            'type'    => Controls_Manager::COLOR,
+            'default' => '#5c6bc0',
+        ] );
+
+        /* ── Knoten-Repeater ────────────────────────────────────── */
+        $repeater = new Repeater();
+
+        $repeater->add_control( 'node_depth', [
+            'label'   => 'Ebene',
+            'type'    => Controls_Manager::SELECT,
+            'default' => '2',
+            'options' => [
+                '1' => '① Hauptkategorie  (kreist um die Mitte)',
+                '2' => '② Unterpunkt  (kreist um Hauptkategorie)',
+                '3' => '③ Detailpunkt / Blatt  (letzter Klick)',
+            ],
+        ] );
+
+        $repeater->add_control( 'node_label', [
+            'label'   => 'Bezeichnung',
+            'type'    => Controls_Manager::TEXT,
+            'default' => '',
+            'dynamic' => [ 'active' => true ],
+        ] );
+
+        $repeater->add_control( 'node_color', [
+            'label'     => 'Farbe',
+            'type'      => Controls_Manager::COLOR,
+            'condition' => [ 'node_depth' => [ '1', '2' ] ],
+        ] );
+
+        $repeater->add_control( 'node_icon', [
+            'label'       => 'Icon (Emoji)',
+            'type'        => Controls_Manager::TEXT,
+            'placeholder' => '♿  ⚖️  📚  🤝  🔄 …',
+            'condition'   => [ 'node_depth' => '1' ],
+        ] );
+
+        $repeater->add_control( 'node_content', [
+            'label'       => 'Inhalt (klappt beim Klick auf)',
+            'description' => 'Text, HTML, Links und Buttons sind erlaubt. Erscheint, wenn dieser Eintrag keine Unterpunkte hat.',
+            'type'        => Controls_Manager::WYSIWYG,
+            'condition'   => [ 'node_depth' => [ '2', '3' ] ],
+        ] );
+
+        $repeater->add_control( 'node_url', [
+            'label'         => 'Externer Link (Button „Mehr erfahren →")',
+            'type'          => Controls_Manager::URL,
+            'placeholder'   => 'https://…',
+            'show_external' => true,
+            'condition'     => [ 'node_depth' => [ '2', '3' ] ],
+        ] );
+
+        $repeater->add_control( 'node_planned', [
+            'label'     => 'Als „Geplant" markieren',
+            'type'      => Controls_Manager::SWITCHER,
+            'label_on'  => 'Ja',
+            'label_off' => 'Nein',
+            'default'   => '',
+        ] );
+
+        $this->add_control( 'nodes', [
+            'label'       => 'Einträge',
+            'type'        => Controls_Manager::REPEATER,
+            'fields'      => $repeater->get_controls(),
+            'default'     => $this->default_nodes(),
+            /* Titel im Repeater: Ebenen-Prefix + Bezeichnung */
+            'title_field' =>
+                '<# var p = {"1":"① ","2":"&nbsp;&nbsp;&nbsp;② ","3":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;③ "}; #>' .
+                '{{{ (p[node_depth]||"") + node_label }}}',
         ] );
 
         $this->end_controls_section();
 
-        /* Navigation */
+        /* ── Navigation ─────────────────────────────────────────── */
         $this->start_controls_section( 'sec_nav', [
             'label' => '🧭 Navigation',
             'tab'   => Controls_Manager::TAB_CONTENT,
@@ -90,7 +156,7 @@ class Widget extends Widget_Base {
 
         $this->end_controls_section();
 
-        /* Mobile */
+        /* ── Mobile ─────────────────────────────────────────────── */
         $this->start_controls_section( 'sec_mobile', [
             'label' => '📱 Mobile',
             'tab'   => Controls_Manager::TAB_CONTENT,
@@ -124,10 +190,10 @@ class Widget extends Widget_Base {
                 'px' => [ 'min' => 300, 'max' => 1400 ],
                 'vh' => [ 'min' => 30,  'max' => 100  ],
             ],
-            'default'         => [ 'unit' => 'vh', 'size' => 82 ],
-            'tablet_default'  => [ 'unit' => 'vh', 'size' => 78 ],
-            'mobile_default'  => [ 'unit' => 'vh', 'size' => 65 ],
-            'selectors'  => [ '{{WRAPPER}} .bbs-mindmap' => 'min-height: {{SIZE}}{{UNIT}};' ],
+            'default'        => [ 'unit' => 'vh', 'size' => 82 ],
+            'tablet_default' => [ 'unit' => 'vh', 'size' => 78 ],
+            'mobile_default' => [ 'unit' => 'vh', 'size' => 65 ],
+            'selectors'      => [ '{{WRAPPER}} .bbs-mindmap' => 'min-height: {{SIZE}}{{UNIT}};' ],
         ] );
 
         $this->add_control( 'container_bg', [
@@ -243,25 +309,19 @@ class Widget extends Widget_Base {
         $this->end_controls_section();
     }
 
-    /* ── Render ─────────────────────────────────────────────── */
+    /* ── Render ─────────────────────────────────────────────────── */
     protected function render(): void {
         $s = $this->get_settings_for_display();
 
-        $data = json_decode( $s['mindmap_json'] ?? '{}', true );
-        if ( ! $data || json_last_error() !== JSON_ERROR_NONE ) {
-            echo '<div class="bbs-mindmap-error" style="padding:20px;color:#c00;">
-                  ⚠ Ungültige JSON-Daten. Bitte die Mindmap-Struktur im Widget-Panel prüfen.<br>
-                  Fehler: ' . esc_html( json_last_error_msg() ) . '</div>';
-            return;
-        }
+        $data = $this->build_tree_from_settings( $s );
 
         $config = [
-            'data'            => $data,
-            'showBreadcrumb'  => ( $s['show_breadcrumb']   ?? 'yes' ) === 'yes',
-            'showHomeBtn'     => ( $s['show_home_btn']     ?? 'yes' ) === 'yes',
-            'clickBgBack'     => ( $s['click_bg_back']     ?? 'yes' ) === 'yes',
-            'mobileFullscreen'=> ( $s['mobile_fullscreen'] ?? 'yes' ) === 'yes',
-            'animSpeed'       => (int) ( $s['anim_speed']['size'] ?? 360 ),
+            'data'             => $data,
+            'showBreadcrumb'   => ( $s['show_breadcrumb']   ?? 'yes' ) === 'yes',
+            'showHomeBtn'      => ( $s['show_home_btn']     ?? 'yes' ) === 'yes',
+            'clickBgBack'      => ( $s['click_bg_back']     ?? 'yes' ) === 'yes',
+            'mobileFullscreen' => ( $s['mobile_fullscreen'] ?? '' )    === 'yes',
+            'animSpeed'        => (int) ( $s['anim_speed']['size'] ?? 360 ),
         ];
 
         $uid = 'bbs-mm-' . $this->get_id();
@@ -303,89 +363,122 @@ class Widget extends Widget_Base {
         <?php
     }
 
-    /* ── Standard-JSON ──────────────────────────────────────── */
-    private function default_json(): string {
-        $data = [
-            'label' => 'Inklusion an den BBS Wesermarsch',
-            'color' => '#5c6bc0',
-            'icon'  => '',
-            'children' => [
-                [
-                    'label' => 'Barrierefreiheit',
-                    'color' => '#e8a435',
-                    'icon'  => '♿',
-                    'children' => [
-                        [ 'label' => 'Barrierefreie Parkplätze', 'url' => '' ],
-                        [ 'label' => 'Aufzüge', 'url' => '' ],
-                        [ 'label' => 'Barrierefreie Toiletten', 'url' => '' ],
-                        [ 'label' => 'Individualisierte Raumplanung', 'url' => '' ],
-                        [ 'label' => 'Beschilderung mit Piktogrammen', 'url' => '', 'planned' => true ],
-                        [ 'label' => 'Automatisierte Türen', 'url' => '', 'planned' => true ],
-                        [ 'label' => 'Leichte Sprache', 'url' => '', 'planned' => true, 'children' => [
-                            [ 'label' => 'Homepage',     'url' => '' ],
-                            [ 'label' => 'Schulordnung', 'url' => '' ],
-                            [ 'label' => 'Flyer',        'url' => '' ],
-                        ]],
-                    ],
-                ],
-                [
-                    'label' => 'Rechtliche Grundlagen',
-                    'color' => '#7a9e5f',
-                    'icon'  => '⚖️',
-                    'children' => [
-                        [ 'label' => 'Grundgesetz der Bundesrepublik Deutschland', 'url' => '' ],
-                        [ 'label' => 'UN-Behindertenrechtskonvention', 'url' => '' ],
-                        [ 'label' => 'Niedersächsisches Schulgesetz', 'url' => '' ],
-                    ],
-                ],
-                [
-                    'label' => 'Übergänge allgemein bildende Schulen – berufsbildende Schulen',
-                    'color' => '#b03a3a',
-                    'icon'  => '🔄',
-                    'children' => [
-                        [ 'label' => 'Berufswegekonferenzen', 'url' => '' ],
-                        [ 'label' => 'Anmeldung an den BBS Wesermarsch', 'url' => '' ],
-                        [ 'label' => 'Übergabegespräche', 'url' => '' ],
-                    ],
-                ],
-                [
-                    'label' => 'Inklusion im Unterricht',
-                    'color' => '#c8694a',
-                    'icon'  => '📚',
-                    'children' => [
-                        [ 'label' => 'Förderplanung', 'color' => '#c8694a', 'children' => [
-                            [ 'label' => 'Förderplanung', 'url' => '' ],
-                            [ 'label' => 'Digitales Förderplanungs-Tool (Splint)', 'url' => '' ],
-                        ]],
-                        [ 'label' => 'Nachteilsausgleich', 'color' => '#c8694a', 'children' => [
-                            [ 'label' => 'Nachteilsausgleich (alle Schulformen – außer Berufliches Gymnasium)', 'url' => '' ],
-                            [ 'label' => 'Nachteilsausgleich Berufliches Gymnasium', 'url' => '' ],
-                        ]],
-                        [ 'label' => 'Unterrichtsgestaltung', 'color' => '#c8694a', 'children' => [
-                            [ 'label' => 'Individualisierte Aufgaben',   'url' => '' ],
-                            [ 'label' => 'Individualisiertes Material',  'url' => '' ],
-                            [ 'label' => 'VETO-Prinzip',                 'url' => '' ],
-                            [ 'label' => 'Buddy-Prinzip',                'url' => '' ],
-                        ]],
-                    ],
-                ],
-                [
-                    'label' => 'Unterstützungssysteme',
-                    'color' => '#7a9e5f',
-                    'icon'  => '🤝',
-                    'children' => [
-                        [ 'label' => 'Fachstelle Inklusion', 'url' => '' ],
-                        [ 'label' => 'Mobiler Dienst', 'url' => '' ],
-                        [ 'label' => 'Schulsozialarbeit', 'url' => '' ],
-                        [ 'label' => 'Beratungsteam', 'url' => '' ],
-                        [ 'label' => 'Reha-Beratung', 'url' => '' ],
-                        [ 'label' => 'Schulbegleitung', 'url' => '' ],
-                        [ 'label' => 'Regionale Beratungs- und Unterstützungszentren Inklusive Schule', 'url' => '' ],
-                        [ 'label' => 'Fort- und Weiterbildung', 'url' => '' ],
-                    ],
-                ],
-            ],
+    /* ── Baum aus Repeater-Einträgen aufbauen ───────────────────── */
+
+    /**
+     * Konvertiert die flache Repeater-Liste (mit Ebenenwahl) in die
+     * verschachtelte JSON-Struktur, die BBSMindmap.js erwartet.
+     * Algorithmus: Rekursive Tiefenanalyse wie bei WordPress-Menüs.
+     */
+    private function build_tree_from_settings( array $s ): array {
+        $root = [
+            'label'    => sanitize_text_field( $s['root_label'] ?? 'Inklusion' ),
+            'color'    => sanitize_hex_color( $s['root_color'] ?? '#5c6bc0' ) ?: '#5c6bc0',
+            'icon'     => '',
+            'children' => [],
         ];
-        return json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
+
+        $items = array_values( $s['nodes'] ?? [] );
+        if ( empty( $items ) ) return $root;
+
+        $cursor = 0;
+        $root['children'] = $this->nest_nodes( $items, $cursor, 1 );
+        return $root;
+    }
+
+    /**
+     * Rekursiver Helfer: nimmt die flache Liste (per Index-Cursor) und
+     * sammelt alle Einträge der Ebene $target_depth als Kinder ein.
+     * Tiefere Einträge werden als children des jeweils letzten Eintrags gesammelt.
+     *
+     * @param array $items   Flache Liste aller Repeater-Einträge (original, unverändert)
+     * @param int   $cursor  Aktueller Lesezeiger (by reference über Caller)
+     * @param int   $depth   Aktuell zu sammelnde Tiefe
+     */
+    private function nest_nodes( array $items, int &$cursor, int $depth ): array {
+        $result = [];
+
+        while ( $cursor < count( $items ) ) {
+            $raw  = $items[ $cursor ];
+            $d    = max( 1, min( 3, (int) ( $raw['node_depth'] ?? 2 ) ) );
+
+            if ( $d < $depth ) break;  // gehört zum übergeordneten Level → Abbruch
+
+            $cursor++;  // diesen Eintrag konsumieren
+
+            $node = [ 'label' => sanitize_text_field( $raw['node_label'] ?? '' ) ];
+
+            $color = sanitize_hex_color( $raw['node_color'] ?? '' );
+            if ( $color )                              $node['color']   = $color;
+            if ( ! empty( $raw['node_icon'] ) )        $node['icon']    = sanitize_text_field( $raw['node_icon'] );
+            if ( ( $raw['node_planned'] ?? '' ) === 'yes' ) $node['planned'] = true;
+
+            $url_data = $raw['node_url'] ?? [];
+            if ( ! empty( $url_data['url'] ) )         $node['url']     = esc_url_raw( $url_data['url'] );
+            if ( ! empty( $raw['node_content'] ) )     $node['content'] = wp_kses_post( $raw['node_content'] );
+
+            // Tiefere Einträge werden als children dieses Knotens gesammelt
+            $children = $this->nest_nodes( $items, $cursor, $depth + 1 );
+            if ( ! empty( $children ) ) $node['children'] = $children;
+
+            $result[] = $node;
+        }
+
+        return $result;
+    }
+
+    /* ── Standard-Einträge (flach, mit Ebenenangabe) ────────────── */
+    private function default_nodes(): array {
+        return [
+            // ① Barrierefreiheit
+            [ 'node_depth' => '1', 'node_label' => 'Barrierefreiheit',              'node_color' => '#e8a435', 'node_icon' => '♿',  'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Barrierefreie Parkplätze',      'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Aufzüge',                       'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Barrierefreie Toiletten',       'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Individualisierte Raumplanung', 'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Beschilderung mit Piktogrammen','node_planned' => 'yes' ],
+            [ 'node_depth' => '2', 'node_label' => 'Automatisierte Türen',          'node_planned' => 'yes' ],
+            [ 'node_depth' => '2', 'node_label' => 'Leichte Sprache',               'node_planned' => 'yes' ],
+            [ 'node_depth' => '3', 'node_label' => 'Homepage',    'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Schulordnung','node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Flyer',       'node_planned' => '' ],
+
+            // ① Rechtliche Grundlagen
+            [ 'node_depth' => '1', 'node_label' => 'Rechtliche Grundlagen', 'node_color' => '#7a9e5f', 'node_icon' => '⚖️', 'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Grundgesetz der Bundesrepublik Deutschland', 'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'UN-Behindertenrechtskonvention',             'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Niedersächsisches Schulgesetz',              'node_planned' => '' ],
+
+            // ① Übergänge
+            [ 'node_depth' => '1', 'node_label' => 'Übergänge allgemein bildende Schulen – berufsbildende Schulen', 'node_color' => '#b03a3a', 'node_icon' => '🔄', 'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Berufswegekonferenzen',              'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Anmeldung an den BBS Wesermarsch',  'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Übergabegespräche',                 'node_planned' => '' ],
+
+            // ① Inklusion im Unterricht
+            [ 'node_depth' => '1', 'node_label' => 'Inklusion im Unterricht', 'node_color' => '#c8694a', 'node_icon' => '📚', 'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Förderplanung',     'node_color' => '#c8694a', 'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Förderplanung',                                     'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Digitales Förderplanungs-Tool (Splint)',             'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Nachteilsausgleich', 'node_color' => '#c8694a', 'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Nachteilsausgleich (alle Schulformen – außer Berufliches Gymnasium)', 'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Nachteilsausgleich Berufliches Gymnasium',           'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Unterrichtsgestaltung', 'node_color' => '#c8694a', 'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Individualisierte Aufgaben',   'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Individualisiertes Material',  'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'VETO-Prinzip',                 'node_planned' => '' ],
+            [ 'node_depth' => '3', 'node_label' => 'Buddy-Prinzip',                'node_planned' => '' ],
+
+            // ① Unterstützungssysteme
+            [ 'node_depth' => '1', 'node_label' => 'Unterstützungssysteme', 'node_color' => '#7a9e5f', 'node_icon' => '🤝', 'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Fachstelle Inklusion',    'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Mobiler Dienst',          'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Schulsozialarbeit',       'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Beratungsteam',           'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Reha-Beratung',           'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Schulbegleitung',         'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Regionale Beratungs- und Unterstützungszentren Inklusive Schule', 'node_planned' => '' ],
+            [ 'node_depth' => '2', 'node_label' => 'Fort- und Weiterbildung', 'node_planned' => '' ],
+        ];
     }
 }
