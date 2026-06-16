@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BBS Inklusion Mindmap – Demo</title>
+  <link rel="stylesheet" href="assets/css/bbs-mindmap.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1d2e;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+      gap: 20px;
+    }
+
+    header {
+      text-align: center;
+      color: #fff;
+    }
+
+    header h1 {
+      font-size: clamp(16px, 3vw, 22px);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      opacity: 0.9;
+    }
+
+    header p {
+      font-size: 13px;
+      opacity: 0.45;
+      margin-top: 4px;
+    }
+
+    #mindmap-demo {
+      width: 100%;
+      max-width: 1200px;
+      min-height: 82vh;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.45), 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    @media (max-width: 767px) {
+      body { padding: 0; background: #eef0f6; }
+      header { display: none; }
+      #mindmap-demo {
+        border-radius: 0;
+        min-height: 100vh;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>BBS Inklusion Mindmap – lokale Demo</h1>
+    <p>Klicke auf eine Karte, um tiefer zu navigieren · Zurück-Button oder Breadcrumb nutzen</p>
+  </header>
+
+  <div id="mindmap-demo" class="bbs-mindmap" role="region" aria-label="Interaktive Mindmap – Inklusion an den BBS Wesermarsch"></div>
+
+  <script src="assets/js/bbs-mindmap.js"></script>
+  <script>
+    const BBS_DATA = {
+      "label": "Inklusion an den BBS Wesermarsch",
+      "color": "#5c6bc0",
+      "icon": "",
+      "children": [
+        {
+          "label": "Barrierefreiheit",
+          "color": "#e8a435",
+          "icon": "♿",
+          "children": [
+            { "label": "Barrierefreie Parkplätze", "url": "" },
+            { "label": "Aufzüge", "url": "" },
+            { "label": "Barrierefreie Toiletten", "url": "" },
+            { "label": "Individualisierte Raumplanung", "url": "" },
+            { "label": "Beschilderung mit Piktogrammen", "url": "", "planned": true },
+            { "label": "Automatisierte Türen", "url": "", "planned": true },
+            {
+              "label": "Leichte Sprache",
+              "url": "",
+              "planned": true,
+              "children": [
+                { "label": "Homepage",     "url": "" },
+                { "label": "Schulordnung", "url": "" },
+                { "label": "Flyer",        "url": "" }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Rechtliche Grundlagen",
+          "color": "#7a9e5f",
+          "icon": "⚖️",
+          "children": [
+            { "label": "Grundgesetz der Bundesrepublik Deutschland", "url": "" },
+            { "label": "UN-Behindertenrechtskonvention", "url": "" },
+            { "label": "Niedersächsisches Schulgesetz", "url": "" }
+          ]
+        },
+        {
+          "label": "Übergänge allgemein bildende Schulen – berufsbildende Schulen",
+          "color": "#b03a3a",
+          "icon": "🔄",
+          "children": [
+            { "label": "Berufswegekonferenzen", "url": "" },
+            { "label": "Anmeldung an den BBS Wesermarsch", "url": "" },
+            { "label": "Übergabegespräche", "url": "" }
+          ]
+        },
+        {
+          "label": "Inklusion im Unterricht",
+          "color": "#c8694a",
+          "icon": "📚",
+          "children": [
+            {
+              "label": "Förderplanung",
+              "color": "#c8694a",
+              "children": [
+                { "label": "Förderplanung", "url": "" },
+                { "label": "Digitales Förderplanungs-Tool (Splint)", "url": "" }
+              ]
+            },
+            {
+              "label": "Nachteilsausgleich",
+              "color": "#c8694a",
+              "children": [
+                { "label": "Nachteilsausgleich (alle Schulformen – außer Berufliches Gymnasium)", "url": "" },
+                { "label": "Nachteilsausgleich Berufliches Gymnasium", "url": "" }
+              ]
+            },
+            {
+              "label": "Unterrichtsgestaltung",
+              "color": "#c8694a",
+              "children": [
+                { "label": "Individualisierte Aufgaben",  "url": "" },
+                { "label": "Individualisiertes Material", "url": "" },
+                { "label": "VETO-Prinzip",                "url": "" },
+                { "label": "Buddy-Prinzip",               "url": "" }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Unterstützungssysteme",
+          "color": "#7a9e5f",
+          "icon": "🤝",
+          "children": [
+            { "label": "Fachstelle Inklusion", "url": "" },
+            { "label": "Mobiler Dienst", "url": "" },
+            { "label": "Schulsozialarbeit", "url": "" },
+            { "label": "Beratungsteam", "url": "" },
+            { "label": "Reha-Beratung", "url": "" },
+            { "label": "Schulbegleitung", "url": "" },
+            { "label": "Regionale Beratungs- und Unterstützungszentren Inklusive Schule", "url": "" },
+            { "label": "Fort- und Weiterbildung", "url": "" }
+          ]
+        }
+      ]
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+      new BBSMindmap(document.getElementById('mindmap-demo'), {
+        data:             BBS_DATA,
+        showBreadcrumb:   true,
+        showHomeBtn:      true,
+        clickBgBack:      true,
+        mobileFullscreen: true,
+        animSpeed:        360
+      });
+    });
+  </script>
+
+</body>
+</html>
