@@ -1,22 +1,11 @@
 /**
  * BBS Inklusion Mindmap – Frontend Engine
- * Zoom-Navigation im NotebookLM-Stil
- *
- * Usage (auto-initialized via PHP render / demo.html):
- *   new BBSMindmap(containerEl, config)
- *
- * Config shape:
- *   data             {object}  – Mindmap-JSON-Wurzel
- *   showBreadcrumb   {bool}    – Breadcrumb-Leiste anzeigen
- *   showHomeBtn      {bool}    – Start-Button anzeigen
- *   clickBgBack      {bool}    – Klick auf Hintergrund = Zurück
- *   mobileFullscreen {bool}    – Vollbild auf Mobile
- *   animSpeed        {number}  – Animationsdauer in ms
+ * Radiales Zoom-Navigationssystem · NotebookLM-Stil
  */
 class BBSMindmap {
 
   /* ──────────────────────────────────────────────────────────
-     Konstruktor & Init
+     Konstruktor
   ────────────────────────────────────────────────────────── */
   constructor(container, config = {}) {
     this.container = container;
@@ -29,23 +18,28 @@ class BBSMindmap {
       animSpeed:        360,
     }, config);
 
-    this.stack     = [];   // [{node, label, color}] – Navigationsverlauf
-    this.current   = this.cfg.data;
-    this.animating = false;
+    this.stack        = [];
+    this.current      = this.cfg.data;
+    this.animating    = false;
+    this._resizeTimer = null;
 
     this._buildShell();
     this._showLevel(this.cfg.data, 'initial');
     this._applyMobileFullscreen();
-    window.addEventListener('resize', () => this._applyMobileFullscreen());
+    window.addEventListener('resize', () => {
+      this._applyMobileFullscreen();
+      clearTimeout(this._resizeTimer);
+      this._resizeTimer = setTimeout(() => this._repositionIfNeeded(), 160);
+    });
   }
 
   /* ──────────────────────────────────────────────────────────
-     DOM-Gerüst aufbauen
+     DOM-Gerüst
   ────────────────────────────────────────────────────────── */
   _buildShell() {
     this.container.classList.add('bbs-mindmap-ready');
+    this.container.style.setProperty('--mm-anim-speed', this.cfg.animSpeed + 'ms');
 
-    /* Navbar */
     this.navbar = this._el('div', 'mm-navbar');
     this.navbar.setAttribute('role', 'navigation');
 
@@ -69,7 +63,6 @@ class BBSMindmap {
     this.navbar.appendChild(this.breadcrumb);
     if (this.cfg.showHomeBtn) this.navbar.appendChild(this.homeBtn);
 
-    /* Stage (content area) */
     this.stage = this._el('div', 'mm-stage');
     this.stage.setAttribute('role', 'main');
 
@@ -84,7 +77,7 @@ class BBSMindmap {
   }
 
   /* ──────────────────────────────────────────────────────────
-     Level anzeigen (Hauptfunktion)
+     Level-Navigation
   ────────────────────────────────────────────────────────── */
   _showLevel(node, direction = 'forward') {
     if (this.animating) return;
@@ -94,13 +87,9 @@ class BBSMindmap {
     const oldChildren = [...this.stage.children];
     const half        = this.cfg.animSpeed * 0.45;
 
-    /* 1. Alte Elemente animiert ausblenden */
     if (oldChildren.length && direction !== 'initial') {
       const exitClass = direction === 'forward' ? 'mm-exit-fwd' : 'mm-exit-back';
-      oldChildren.forEach((el, i) => {
-        el.style.setProperty('--exit-i', i);
-        el.classList.add(exitClass);
-      });
+      oldChildren.forEach(el => el.classList.add(exitClass));
       setTimeout(() => this._renderLevel(node, direction, half), half);
     } else {
       this._renderLevel(node, direction, 0);
@@ -110,31 +99,16 @@ class BBSMindmap {
   _renderLevel(node, direction, delay) {
     setTimeout(() => {
       this.stage.innerHTML = '';
-
-      /* Root-Hero nur auf Startebene */
-      if (this.stack.length === 0) {
-        this.stage.appendChild(this._buildRootCard(node));
-      } else {
-        /* Level-Header zeigt aktuellen Knoten */
-        this.stage.appendChild(this._buildLevelHeader(node));
-      }
-
-      /* Kinder-Grid oder Leaf-Inhalt */
-      if (node.children?.length) {
-        const grid = this._buildGrid(node);
-        this.stage.appendChild(grid);
-      } else {
-        this.stage.appendChild(this._buildLeafPanel(node));
-      }
-
-      /* Enter-Animation auslösen */
       const enterClass = direction === 'back' ? 'mm-enter-back' : 'mm-enter-fwd';
-      const items = this.stage.querySelectorAll('.mm-root-card, .mm-level-header, .mm-node-card, .mm-leaf-panel');
-      items.forEach((el, i) => {
-        el.style.setProperty('--enter-i', i);
-        el.classList.add(enterClass);
-        el.addEventListener('animationend', () => el.classList.remove(enterClass), { once: true });
-      });
+
+      if (node.children?.length) {
+        this.stage.appendChild(this._buildRadialScreen(node, enterClass));
+      } else {
+        const panel = this._buildLeafPanel(node);
+        panel.classList.add(enterClass);
+        panel.addEventListener('animationend', () => panel.classList.remove(enterClass), { once: true });
+        this.stage.appendChild(panel);
+      }
 
       this._updateNav();
       this.animating = false;
@@ -142,59 +116,134 @@ class BBSMindmap {
   }
 
   /* ──────────────────────────────────────────────────────────
-     Root-Hero-Karte (Startebene)
+     Radiales Layout
   ────────────────────────────────────────────────────────── */
-  _buildRootCard(node) {
-    const card = this._el('div', 'mm-root-card');
-    card.style.setProperty('--node-color', node.color || '#5c6bc0');
+  _buildRadialScreen(node, enterClass) {
+    const wrap  = this._el('div', 'mm-radial');
+    const color = node.color || this._resolveColor(node);
+
+    // Zentrale Karte
+    wrap.appendChild(this._buildCenterCard(node));
+
+    // SVG-Overlay für Verbindungslinien
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('mm-radial-svg');
+    svg.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(svg);
+
+    // Kind-Orbits (zunächst unsichtbar bis zur Positionierung)
+    node.children.forEach((child, i) => {
+      const orbit = this._el('div', 'mm-radial-orbit');
+      orbit.style.visibility = 'hidden';
+      orbit.style.setProperty('--float-delay', (i * 0.55 % 2.8).toFixed(2) + 's');
+      orbit.appendChild(this._buildNodeCard(child, color, i));
+      wrap.appendChild(orbit);
+    });
+
+    // Nach erstem Paint positionieren, dann Enter-Animation starten
+    requestAnimationFrame(() => {
+      this._positionRadial(wrap, svg);
+      wrap.classList.add(enterClass);
+      wrap.addEventListener('animationend', () => wrap.classList.remove(enterClass), { once: true });
+    });
+
+    return wrap;
+  }
+
+  _buildCenterCard(node) {
+    const isRoot = this.stack.length === 0;
+    const color  = node.color || this._resolveColor(node);
+    const card   = this._el('div', 'mm-radial-center');
+    card.style.setProperty('--node-color', color);
+
+    let sub = '';
+    if (node.children?.length) {
+      sub = isRoot
+        ? `${node.children.length} Themenbereiche – wähle einen aus`
+        : `${node.children.length} ${node.children.length === 1 ? 'Unterpunkt' : 'Unterpunkte'}`;
+    }
 
     card.innerHTML = `
-      ${node.icon ? `<span class="mm-root-icon" aria-hidden="true">${this._esc(node.icon)}</span>` : ''}
-      <h2 class="mm-root-label">${this._esc(node.label)}</h2>
-      ${node.children?.length
-        ? `<p class="mm-root-sub">${node.children.length} Themenbereiche – wähle einen aus</p>`
-        : ''}
-    `;
+      <div class="mm-center-inner">
+        ${node.icon ? `<span class="mm-center-icon" aria-hidden="true">${this._esc(node.icon)}</span>` : ''}
+        <div class="mm-center-body">
+          <span class="mm-center-label">${this._esc(node.label)}</span>
+          ${sub ? `<span class="mm-center-sub">${sub}</span>` : ''}
+        </div>
+      </div>`;
     return card;
   }
 
-  /* ──────────────────────────────────────────────────────────
-     Level-Header (tiefere Ebenen)
-  ────────────────────────────────────────────────────────── */
-  _buildLevelHeader(node) {
-    const parentColor = this._resolveColor(node);
-    const header = this._el('div', 'mm-level-header');
-    header.style.setProperty('--node-color', parentColor);
-    header.innerHTML = `
-      ${node.icon ? `<span class="mm-level-icon" aria-hidden="true">${this._esc(node.icon)}</span>` : ''}
-      <h2 class="mm-level-title">${this._esc(node.label)}</h2>
-    `;
-    return header;
-  }
+  _positionRadial(wrap, svg) {
+    const orbits   = wrap.querySelectorAll('.mm-radial-orbit');
+    const count    = orbits.length;
+    const isMobile = window.innerWidth < 640;
 
-  /* ──────────────────────────────────────────────────────────
-     Karten-Grid
-  ────────────────────────────────────────────────────────── */
-  _buildGrid(node) {
-    const color    = this._resolveColor(node);
-    const grid     = this._el('div', 'mm-grid');
-    const count    = node.children.length;
-    grid.setAttribute('data-count', count);
+    if (isMobile) {
+      wrap.classList.add('mm-radial--list');
+      this.stage.classList.add('mm-stage--list');
+      orbits.forEach(o => (o.style.visibility = ''));
+      return;
+    }
 
-    node.children.forEach((child, i) => {
-      const card = this._buildNodeCard(child, color, i);
-      grid.appendChild(card);
+    wrap.classList.remove('mm-radial--list');
+    this.stage.classList.remove('mm-stage--list');
+
+    const ww = wrap.offsetWidth;
+    const wh = wrap.offsetHeight;
+    if (!ww || !wh || !count) return;
+
+    const cx = ww / 2;
+    const cy = wh / 2;
+
+    // Radius adaptiv: Center-Karte und Kind-Karten dürfen sich nicht überlappen
+    const centerW = Math.min(340, ww * 0.36);
+    const childW  = Math.min(230, ww * 0.20);
+    const minR    = centerW / 2 + childW / 2 + 28;
+    const maxR    = Math.min(ww * 0.41, wh * 0.41);
+    const radius  = Math.max(minR, Math.min(maxR, 320));
+
+    svg.setAttribute('width',   ww);
+    svg.setAttribute('height',  wh);
+    svg.setAttribute('viewBox', `0 0 ${ww} ${wh}`);
+    svg.innerHTML = '';
+
+    orbits.forEach((orbit, i) => {
+      const angleDeg = (360 / count) * i - 90; // −90° = oben
+      const angleRad = angleDeg * Math.PI / 180;
+      const x = Math.round(cx + radius * Math.cos(angleRad));
+      const y = Math.round(cy + radius * Math.sin(angleRad));
+
+      orbit.style.left       = x + 'px';
+      orbit.style.top        = y + 'px';
+      orbit.style.visibility = '';
+
+      // SVG-Verbindungslinie
+      const len  = Math.round(Math.hypot(x - cx, y - cy));
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+      line.setAttribute('x2', x);  line.setAttribute('y2', y);
+      line.style.setProperty('--line-length', len);
+      line.style.setProperty('--line-i', i);
+      line.classList.add('mm-radial-line');
+      svg.appendChild(line);
     });
-    return grid;
+  }
+
+  _repositionIfNeeded() {
+    const radial = this.stage.querySelector('.mm-radial');
+    if (!radial) return;
+    const svg = radial.querySelector('.mm-radial-svg');
+    if (svg) this._positionRadial(radial, svg);
   }
 
   /* ──────────────────────────────────────────────────────────
-     Einzelne Knoten-Karte
+     Knoten-Karte
   ────────────────────────────────────────────────────────── */
   _buildNodeCard(node, parentColor, index) {
-    const hasChildren = !!(node.children?.length);
-    const hasContent  = !!(node.content);
-    const hasUrl      = !!(node.url);
+    const hasChildren  = !!(node.children?.length);
+    const hasContent   = !!(node.content);
+    const hasUrl       = !!(node.url);
     const isInteractive = hasChildren || hasContent || hasUrl;
     const color = node.color || parentColor || '#5c6bc0';
 
@@ -202,14 +251,13 @@ class BBSMindmap {
     card.style.setProperty('--node-color', color);
     card.setAttribute('data-index', index);
     if (isInteractive) {
-      card.setAttribute('role', 'button');
-      card.setAttribute('tabindex', '0');
+      card.setAttribute('role',       'button');
+      card.setAttribute('tabindex',   '0');
       card.setAttribute('aria-label', node.label);
     }
-    if (node.planned) card.classList.add('mm-is-planned');
+    if (node.planned)   card.classList.add('mm-is-planned');
     if (!isInteractive) card.classList.add('mm-is-static');
 
-    /* Card inner */
     card.innerHTML = `
       <div class="mm-card-inner">
         ${node.icon ? `<span class="mm-node-icon" aria-hidden="true">${this._esc(node.icon)}</span>` : ''}
@@ -219,13 +267,11 @@ class BBSMindmap {
           ${hasChildren ? `<span class="mm-node-count">${node.children.length} ${node.children.length === 1 ? 'Eintrag' : 'Einträge'}</span>` : ''}
         </div>
         ${isInteractive ? '<span class="mm-node-chevron" aria-hidden="true">›</span>' : ''}
-      </div>
-    `;
+      </div>`;
 
     if (isInteractive) {
       const activate = () => {
         if (this.animating) return;
-
         if (hasChildren) {
           this.stack.push({ node: this.current, label: this.current.label, color: this._resolveColor(this.current) });
           this._showLevel(node, 'forward');
@@ -235,16 +281,11 @@ class BBSMindmap {
           window.open(node.url, '_blank', 'noopener noreferrer');
         }
       };
-
       card.addEventListener('click', activate);
-      card.addEventListener('keydown', (e) => {
+      card.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
       });
-
-      /* Hover-Pulse */
-      card.addEventListener('pointerenter', () => {
-        if (!this.animating) card.classList.add('mm-hovered');
-      });
+      card.addEventListener('pointerenter', () => { if (!this.animating) card.classList.add('mm-hovered'); });
       card.addEventListener('pointerleave', () => card.classList.remove('mm-hovered'));
     }
 
@@ -252,7 +293,7 @@ class BBSMindmap {
   }
 
   /* ──────────────────────────────────────────────────────────
-     Leaf-Panel (letzter Knoten, kein children)
+     Leaf Panel
   ────────────────────────────────────────────────────────── */
   _buildLeafPanel(node) {
     const color = this._resolveColor(node);
@@ -260,29 +301,18 @@ class BBSMindmap {
     panel.style.setProperty('--node-color', color);
 
     let inner = `<div class="mm-leaf-inner">`;
-
-    if (node.content) {
-      inner += `<div class="mm-leaf-content">${node.content}</div>`;
-    } else {
-      inner += `<p class="mm-leaf-empty">Kein weiterer Inhalt vorhanden.</p>`;
-    }
-
+    if (node.content) inner += `<div class="mm-leaf-content">${node.content}</div>`;
+    else              inner += `<p class="mm-leaf-empty">Kein weiterer Inhalt vorhanden.</p>`;
     if (node.url) {
-      inner += `<a href="${this._esc(node.url)}" target="_blank" rel="noopener noreferrer" class="mm-leaf-link">
-                  Mehr erfahren →
-                </a>`;
+      inner += `<a href="${this._esc(node.url)}" target="_blank" rel="noopener noreferrer" class="mm-leaf-link">Mehr erfahren →</a>`;
     }
-
     inner += `</div>`;
     panel.innerHTML = inner;
     return panel;
   }
 
-  /* Inline-Expand für Leaf-Karten (Content-Panel klappt auf) */
   _expandLeafInline(card, node) {
-    const color = node.color || this._resolveColor(this.current);
-
-    /* Schon offen? → schließen */
+    const color    = node.color || this._resolveColor(this.current);
     const existing = card.querySelector('.mm-inline-leaf');
     if (existing) {
       existing.classList.add('mm-collapsing');
@@ -290,14 +320,11 @@ class BBSMindmap {
       card.classList.remove('mm-card-expanded');
       return;
     }
-
-    /* Panel erstellen */
     const panel = this._el('div', 'mm-inline-leaf mm-expanding');
     panel.style.setProperty('--node-color', color);
     let html = '';
     if (node.content) html += `<div class="mm-inline-content">${node.content}</div>`;
     if (node.url)     html += `<a href="${this._esc(node.url)}" target="_blank" rel="noopener noreferrer" class="mm-inline-link">Mehr erfahren →</a>`;
-
     panel.innerHTML = html;
     panel.addEventListener('animationend', () => panel.classList.remove('mm-expanding'), { once: true });
     card.appendChild(panel);
@@ -305,7 +332,7 @@ class BBSMindmap {
   }
 
   /* ──────────────────────────────────────────────────────────
-     Navigation
+     Navigations-API
   ────────────────────────────────────────────────────────── */
   goBack() {
     if (this.animating || this.stack.length === 0) return;
@@ -331,12 +358,10 @@ class BBSMindmap {
     this.backBtn.hidden = depth === 0;
     if (this.cfg.showHomeBtn) this.homeBtn.hidden = depth === 0;
 
-    /* Breadcrumb */
     if (this.cfg.showBreadcrumb) {
-      this.breadcrumb.hidden  = depth === 0;
+      this.breadcrumb.hidden    = depth === 0;
       this.breadcrumb.innerHTML = '';
 
-      /* Root-Link */
       const rootCrumb = this._el('button', 'mm-crumb mm-crumb-root');
       rootCrumb.textContent = '⌂';
       rootCrumb.setAttribute('aria-label', 'Start');
@@ -364,8 +389,7 @@ class BBSMindmap {
   ────────────────────────────────────────────────────────── */
   _applyMobileFullscreen() {
     if (!this.cfg.mobileFullscreen) return;
-    const isMobile = window.innerWidth < 768;
-    this.container.classList.toggle('mm-mobile-fullscreen', isMobile);
+    this.container.classList.toggle('mm-mobile-fullscreen', window.innerWidth < 768);
   }
 
   /* ──────────────────────────────────────────────────────────
@@ -373,7 +397,6 @@ class BBSMindmap {
   ────────────────────────────────────────────────────────── */
   _resolveColor(node) {
     if (node?.color) return node.color;
-    /* Farbe vom letzten Stack-Item erben */
     for (let i = this.stack.length - 1; i >= 0; i--) {
       if (this.stack[i].color) return this.stack[i].color;
     }

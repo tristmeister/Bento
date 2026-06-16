@@ -1,286 +1,343 @@
 /* ============================================================
    BBS Inklusion Mindmap – Stylesheet
-   Zoom-Navigation · Responsive · Elementor-ready
+   Radiales Zoom-Navigationssystem · Responsive · Elementor-ready
    ============================================================ */
 
 :root {
-  --mm-font:          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --mm-ease-out:      cubic-bezier(0.22, 1, 0.36, 1);
-  --mm-ease-in:       cubic-bezier(0.64, 0, 0.78, 0);
-  --mm-ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
-  --mm-radius:        14px;
-  --mm-shadow:        0 4px 20px rgba(0,0,0,0.10);
-  --mm-shadow-hover:  0 8px 32px rgba(0,0,0,0.18);
-  --mm-navbar-h:      58px;
+  --mm-font:         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mm-ease-out:     cubic-bezier(0.22, 1, 0.36, 1);
+  --mm-ease-in:      cubic-bezier(0.64, 0, 0.78, 0);
+  --mm-ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mm-radius:       14px;
+  --mm-shadow:       0 4px 24px rgba(0,0,0,0.11);
+  --mm-shadow-hover: 0 10px 36px rgba(0,0,0,0.20);
+  --mm-navbar-h:     58px;
 }
 
 /* ── Wrapper ──────────────────────────────────────────────── */
 .bbs-mindmap {
-  position:   relative;
-  width:      100%;
-  min-height: 80vh;
-  background: #eef0f6;
-  overflow:   hidden;
-  font-family: var(--mm-font);
-  display:    flex;
+  position:       relative;
+  width:          100%;
+  min-height:     80vh;
+  background:     #eef0f6;
+  overflow:       hidden;
+  font-family:    var(--mm-font);
+  display:        flex;
   flex-direction: column;
 }
 
-/* Mobile Fullscreen */
 .bbs-mindmap.mm-mobile-fullscreen {
-  position:   fixed;
-  inset:      0;
-  z-index:    9999;
-  min-height: 100dvh;
+  position:      fixed;
+  inset:         0;
+  z-index:       9999;
+  min-height:    100dvh;
   border-radius: 0 !important;
 }
 
 /* ── Navbar ───────────────────────────────────────────────── */
 .mm-navbar {
-  display:        flex;
-  align-items:    center;
-  gap:            10px;
-  height:         var(--mm-navbar-h);
-  padding:        0 16px;
-  background:     rgba(255,255,255,0.92);
-  backdrop-filter: blur(14px) saturate(1.8);
+  display:             flex;
+  align-items:         center;
+  gap:                 10px;
+  height:              var(--mm-navbar-h);
+  padding:             0 16px;
+  background:          rgba(255,255,255,0.92);
+  backdrop-filter:     blur(14px) saturate(1.8);
   -webkit-backdrop-filter: blur(14px) saturate(1.8);
-  border-bottom:  1px solid rgba(0,0,0,0.06);
-  position:       sticky;
-  top:            0;
-  z-index:        100;
-  flex-shrink:    0;
+  border-bottom:       1px solid rgba(0,0,0,0.06);
+  position:            sticky;
+  top:                 0;
+  z-index:             100;
+  flex-shrink:         0;
 }
 
-/* Buttons */
 .mm-btn {
-  display:        flex;
-  align-items:    center;
-  gap:            5px;
-  border:         none;
-  border-radius:  30px;
-  padding:        7px 14px;
-  font-size:      13px;
-  font-weight:    600;
-  cursor:         pointer;
-  white-space:    nowrap;
-  transition:     background 0.18s, transform 0.15s;
-  font-family:    var(--mm-font);
-  background:     rgba(0,0,0,0.06);
-  color:          #333;
-  flex-shrink:    0;
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  border:        none;
+  border-radius: 30px;
+  padding:       7px 14px;
+  font-size:     13px;
+  font-weight:   600;
+  cursor:        pointer;
+  white-space:   nowrap;
+  transition:    background 0.18s, transform 0.15s;
+  font-family:   var(--mm-font);
+  background:    rgba(0,0,0,0.06);
+  color:         #333;
+  flex-shrink:   0;
 }
 .mm-btn:hover  { background: rgba(0,0,0,0.11); }
 .mm-btn:active { transform: scale(0.95); }
+.mm-btn-icon   { font-size: 16px; }
+.mm-btn-label  { display: none; }
 
-.mm-btn-icon  { font-size: 16px; }
-.mm-btn-label { display: none; }
+@media (min-width: 600px) { .mm-btn-label { display: inline; } }
 
-@media (min-width: 600px) {
-  .mm-btn-label { display: inline; }
-}
-
-/* Breadcrumb */
 .mm-breadcrumb {
-  flex:           1;
-  min-width:      0;
-  display:        flex;
-  align-items:    center;
-  gap:            2px;
-  overflow:       hidden;
+  flex:        1;
+  min-width:   0;
+  display:     flex;
+  align-items: center;
+  gap:         2px;
+  overflow:    hidden;
 }
 
 .mm-crumb {
-  background:   transparent;
-  border:       none;
-  font-family:  var(--mm-font);
-  font-size:    12px;
-  color:        #888;
-  cursor:       pointer;
-  padding:      3px 6px;
+  background:    transparent;
+  border:        none;
+  font-family:   var(--mm-font);
+  font-size:     12px;
+  color:         #888;
+  cursor:        pointer;
+  padding:       3px 6px;
   border-radius: 6px;
-  white-space:  nowrap;
-  transition:   color 0.15s, background 0.15s;
-  max-width:    160px;
-  overflow:     hidden;
+  white-space:   nowrap;
+  transition:    color 0.15s, background 0.15s;
+  max-width:     160px;
+  overflow:      hidden;
   text-overflow: ellipsis;
 }
-.mm-crumb:hover    { color: #333; background: rgba(0,0,0,0.06); }
-.mm-crumb-root     { font-size: 16px; padding: 3px 8px; }
-.mm-crumb-sep      { color: #ccc; font-size: 12px; user-select: none; }
+.mm-crumb:hover { color: #333; background: rgba(0,0,0,0.06); }
+.mm-crumb-root  { font-size: 16px; padding: 3px 8px; }
+.mm-crumb-sep   { color: #ccc; font-size: 12px; user-select: none; }
 
-/* ── Stage (Inhaltsbereich) ───────────────────────────────── */
+/* ── Stage ────────────────────────────────────────────────── */
 .mm-stage {
-  flex:           1;
-  display:        flex;
-  flex-direction: column;
-  align-items:    center;
-  padding:        32px 20px 48px;
-  gap:            24px;
-  overflow-y:     auto;
-  overflow-x:     hidden;
+  flex:            1;
+  position:        relative;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  overflow:        hidden;
+  min-height:      420px;
+}
+
+/* Mobile: Stage wird scrollbar wenn Karten als Liste gezeigt */
+.mm-stage.mm-stage--list {
+  justify-content:           flex-start;
+  align-items:               stretch;
+  overflow-y:                auto;
+  overflow-x:                hidden;
   -webkit-overflow-scrolling: touch;
 }
 
-/* ── Root-Hero-Karte ──────────────────────────────────────── */
-.mm-root-card {
-  background:     linear-gradient(135deg, var(--node-color, #5c6bc0) 0%, color-mix(in srgb, var(--node-color, #5c6bc0) 75%, black) 100%);
-  color:          #fff;
-  border-radius:  20px;
-  padding:        36px 40px;
-  text-align:     center;
-  width:          100%;
-  max-width:      560px;
-  box-shadow:     var(--mm-shadow);
-  position:       relative;
-  overflow:       hidden;
+/* ══════════════════════════════════════════════════════════
+   RADIALES LAYOUT
+   ══════════════════════════════════════════════════════════ */
+
+.mm-radial {
+  position: absolute;
+  inset:    0;
+  overflow: hidden;
 }
-.mm-root-card::after {
-  content:    '';
-  position:   absolute;
-  inset:      -30px;
-  background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 60%);
+
+/* Mobile: Karten werden als vertikale Liste gezeigt */
+.mm-radial--list {
+  position:       static;
+  inset:          auto;
+  overflow:       visible;
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+  padding:        20px 16px 32px;
+  width:          100%;
+}
+
+/* ── Zentrale Hub-Karte ───────────────────────────────────── */
+.mm-radial-center {
+  position:      absolute;
+  left:          50%;
+  top:           50%;
+  width:         clamp(200px, 36%, 340px);
+  background:    linear-gradient(
+                   135deg,
+                   var(--node-color, #5c6bc0) 0%,
+                   color-mix(in srgb, var(--node-color, #5c6bc0) 58%, #000) 100%
+                 );
+  border-radius: 20px;
+  padding:       26px 28px;
+  color:         #fff;
+  z-index:       3;
+  overflow:      hidden;
+  box-shadow:
+    0 0  0  1px color-mix(in srgb, var(--node-color, #5c6bc0) 40%, transparent),
+    0 8px 32px  color-mix(in srgb, var(--node-color, #5c6bc0) 45%, transparent),
+    0 2px 10px  rgba(0,0,0,0.20);
+  animation: mmCenterFloat 4s 0.8s ease-in-out infinite alternate;
+}
+
+/* Glanz-Overlay */
+.mm-radial-center::after {
+  content:        '';
+  position:       absolute;
+  inset:          0;
+  background:     radial-gradient(circle at 72% 22%, rgba(255,255,255,0.22) 0%, transparent 58%);
   pointer-events: none;
 }
-.mm-root-icon  { display: block; font-size: 40px; margin-bottom: 10px; }
-.mm-root-label { font-size: clamp(18px, 4vw, 26px); font-weight: 800; margin: 0 0 8px; line-height: 1.2; }
-.mm-root-sub   { font-size: 14px; opacity: 0.78; margin: 0; }
 
-/* ── Level-Header (tiefere Ebenen) ───────────────────────── */
-.mm-level-header {
+/* Inhalt der Zentral-Karte */
+.mm-center-inner {
+  display:     flex;
+  align-items: center;
+  gap:         14px;
+  position:    relative;
+  z-index:     1;
+}
+
+.mm-center-icon {
+  font-size:   34px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.mm-center-body {
+  flex:           1;
+  min-width:      0;
   display:        flex;
-  align-items:    center;
-  gap:            10px;
-  width:          100%;
-  max-width:      780px;
-  background:     linear-gradient(135deg, var(--node-color, #5c6bc0) 0%, color-mix(in srgb, var(--node-color, #5c6bc0) 75%, black) 100%);
-  color:          #fff;
-  border-radius:  12px;
-  padding:        14px 22px;
-}
-.mm-level-icon  { font-size: 24px; flex-shrink: 0; }
-.mm-level-title { font-size: clamp(14px, 3vw, 18px); font-weight: 700; margin: 0; line-height: 1.25; }
-
-/* ── Karten-Grid ──────────────────────────────────────────── */
-.mm-grid {
-  display:               grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap:                   16px;
-  width:                 100%;
-  max-width:             900px;
+  flex-direction: column;
+  gap:            5px;
 }
 
-/* Grid-Layout je Anzahl Kinder */
-.mm-grid[data-count="1"]  { grid-template-columns: minmax(220px, 420px); }
-.mm-grid[data-count="2"]  { grid-template-columns: repeat(2, 1fr); max-width: 560px; }
-.mm-grid[data-count="3"]  { grid-template-columns: repeat(3, 1fr); }
-.mm-grid[data-count="4"]  { grid-template-columns: repeat(2, 1fr); }
-.mm-grid[data-count="5"],
-.mm-grid[data-count="6"]  { grid-template-columns: repeat(3, 1fr); }
-
-@media (max-width: 640px) {
-  .mm-grid,
-  .mm-grid[data-count="2"],
-  .mm-grid[data-count="3"],
-  .mm-grid[data-count="5"],
-  .mm-grid[data-count="6"] { grid-template-columns: 1fr; }
-  .mm-grid[data-count="4"] { grid-template-columns: repeat(2, 1fr); }
+.mm-center-label {
+  font-size:   clamp(14px, 2vw, 17px);
+  font-weight: 800;
+  color:       #fff;
+  line-height: 1.25;
 }
 
-/* ── Knoten-Karte ─────────────────────────────────────────── */
+.mm-center-sub {
+  font-size:   12px;
+  color:       rgba(255,255,255,0.70);
+  font-weight: 500;
+}
+
+/* Mobile: Zentrums-Karte wird zur statischen Überschrift */
+.mm-radial--list .mm-radial-center {
+  position:  static;
+  transform: none !important;
+  animation: none;
+  width:     100%;
+}
+
+/* ── Orbit (umkreisende Kind-Karte) ──────────────────────── */
+.mm-radial-orbit {
+  position:  absolute;
+  width:     clamp(155px, 19vw, 230px);
+  z-index:   2;
+  animation: mmOrbitFloat 2.8s var(--float-delay, 0s) ease-in-out infinite alternate;
+}
+
+/* Mobile: Orbits werden zu Vollbreite-Listeneinträgen */
+.mm-radial--list .mm-radial-orbit {
+  position:  static;
+  transform: none !important;
+  animation: none;
+  width:     100%;
+}
+
+/* ── SVG Verbindungslinien ────────────────────────────────── */
+.mm-radial-svg {
+  position:       absolute;
+  inset:          0;
+  z-index:        1;
+  pointer-events: none;
+  overflow:       visible;
+}
+
+.mm-radial-line {
+  stroke:            rgba(80, 80, 110, 0.20);
+  stroke-width:      1.5;
+  fill:              none;
+  stroke-linecap:    round;
+  stroke-dasharray:  var(--line-length, 600);
+  stroke-dashoffset: var(--line-length, 600);
+  animation:         mmLineDraw 0.55s ease forwards;
+  animation-delay:   calc(var(--line-i, 0) * 80ms + 250ms);
+}
+
+/* ══════════════════════════════════════════════════════════
+   KNOTEN-KARTE (in Orbit)
+   ══════════════════════════════════════════════════════════ */
+
 .mm-node-card {
-  background:   var(--node-color, #5c6bc0);
+  background:    var(--node-color, #5c6bc0);
   border-radius: var(--mm-radius);
-  padding:      22px;
-  cursor:       pointer;
-  position:     relative;
-  overflow:     hidden;
-  box-shadow:   var(--mm-shadow);
-  transition:   transform 0.22s var(--mm-ease-out),
-                box-shadow 0.22s var(--mm-ease-out);
+  padding:       18px 16px;
+  cursor:        pointer;
+  position:      relative;
+  overflow:      hidden;
+  width:         100%;
+  box-shadow:    var(--mm-shadow);
+  transition:    transform 0.22s var(--mm-ease-out),
+                 box-shadow 0.22s var(--mm-ease-out);
   -webkit-tap-highlight-color: transparent;
-  user-select:  none;
+  user-select:   none;
 }
 
-/* Glow-Overlay beim Hover */
+/* Glow beim Hover */
 .mm-node-card::before {
-  content:     '';
-  position:    absolute;
-  inset:       0;
-  background:  radial-gradient(circle at 70% 30%, rgba(255,255,255,0.18) 0%, transparent 70%);
-  opacity:     0;
-  transition:  opacity 0.22s;
+  content:        '';
+  position:       absolute;
+  inset:          0;
+  background:     radial-gradient(circle at 70% 30%, rgba(255,255,255,0.20) 0%, transparent 68%);
+  opacity:        0;
+  transition:     opacity 0.22s;
   pointer-events: none;
 }
 .mm-node-card.mm-hovered::before { opacity: 1; }
 
 .mm-node-card.mm-hovered,
 .mm-node-card:focus-visible {
-  transform:  translateY(-4px) scale(1.02);
+  transform:  translateY(-3px) scale(1.03);
   box-shadow: var(--mm-shadow-hover);
 }
-.mm-node-card:active { transform: scale(0.97); }
+.mm-node-card:active { transform: scale(0.96); }
 
-/* Statische Karte (kein Children, keine URL, kein Content) */
 .mm-node-card.mm-is-static {
   cursor:  default;
-  opacity: 0.82;
+  opacity: 0.80;
 }
 .mm-node-card.mm-is-static:hover { transform: none; box-shadow: var(--mm-shadow); }
+.mm-node-card.mm-is-planned      { opacity: 0.72; }
 
-/* Geplant */
-.mm-node-card.mm-is-planned { opacity: 0.72; }
-
-/* Card-Inner */
 .mm-card-inner {
   display:     flex;
   align-items: flex-start;
-  gap:         12px;
+  gap:         10px;
 }
 
-.mm-node-icon {
-  font-size:   22px;
-  flex-shrink: 0;
-  margin-top:  1px;
-}
+.mm-node-icon  { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
 
 .mm-node-body {
-  flex:        1;
-  min-width:   0;
-  display:     flex;
+  flex:           1;
+  min-width:      0;
+  display:        flex;
   flex-direction: column;
-  gap:         4px;
+  gap:            4px;
 }
 
-.mm-node-label {
-  font-size:   14px;
-  font-weight: 700;
-  color:       #fff;
-  line-height: 1.3;
-}
-
-.mm-node-count {
-  font-size:  11.5px;
-  color:      rgba(255,255,255,0.72);
-  font-weight: 500;
-}
+.mm-node-label  { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.3; }
+.mm-node-count  { font-size: 11px; color: rgba(255,255,255,0.70); font-weight: 500; }
 
 .mm-planned-badge {
-  display:      inline-block;
-  font-size:    10.5px;
-  font-weight:  700;
-  background:   rgba(255,255,255,0.22);
-  color:        rgba(255,255,255,0.9);
-  padding:      2px 7px;
+  display:       inline-block;
+  font-size:     10px;
+  font-weight:   700;
+  background:    rgba(255,255,255,0.22);
+  color:         rgba(255,255,255,0.9);
+  padding:       2px 7px;
   border-radius: 20px;
-  width:        fit-content;
+  width:         fit-content;
 }
 
 .mm-node-chevron {
-  font-size:   20px;
-  color:       rgba(255,255,255,0.65);
+  font-size:   18px;
+  color:       rgba(255,255,255,0.55);
   flex-shrink: 0;
-  margin-left: 4px;
+  margin-left: auto;
+  align-self:  center;
   transition:  transform 0.2s var(--mm-ease-out), color 0.2s;
 }
 .mm-node-card.mm-hovered .mm-node-chevron {
@@ -288,94 +345,114 @@
   color:     rgba(255,255,255,0.95);
 }
 
-/* Aufgeklappte Leaf-Karte */
 .mm-card-expanded { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 
 /* ── Inline Leaf Panel ────────────────────────────────────── */
 .mm-inline-leaf {
-  background:    rgba(255,255,255,0.14);
+  background:    rgba(255,255,255,0.13);
   border-radius: 0 0 var(--mm-radius) var(--mm-radius);
-  padding:       16px 18px;
-  margin-top:    -4px;
+  padding:       14px 16px;
+  margin-top:    -2px;
 }
-.mm-inline-content { font-size: 13.5px; color: rgba(255,255,255,0.9); line-height: 1.6; }
+.mm-inline-content { font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.6; }
 .mm-inline-link {
-  display:     inline-block;
-  margin-top:  10px;
-  font-size:   13px;
-  font-weight: 600;
-  color:       #fff;
-  text-decoration: underline;
+  display:             inline-block;
+  margin-top:          10px;
+  font-size:           13px;
+  font-weight:         600;
+  color:               #fff;
+  text-decoration:     underline;
   text-underline-offset: 3px;
 }
 
 /* ── Standalone Leaf Panel ────────────────────────────────── */
 .mm-leaf-panel {
-  background:   linear-gradient(135deg, var(--node-color, #5c6bc0) 0%, color-mix(in srgb, var(--node-color, #5c6bc0) 75%, black) 100%);
-  border-radius: 16px;
-  padding:      32px;
-  width:        100%;
-  max-width:    680px;
-  color:        #fff;
-  box-shadow:   var(--mm-shadow);
+  background:    linear-gradient(
+                   135deg,
+                   var(--node-color, #5c6bc0) 0%,
+                   color-mix(in srgb, var(--node-color, #5c6bc0) 72%, black) 100%
+                 );
+  border-radius: 18px;
+  padding:       32px;
+  width:         88%;
+  max-width:     640px;
+  color:         #fff;
+  box-shadow:    var(--mm-shadow);
 }
 .mm-leaf-inner   { display: flex; flex-direction: column; gap: 16px; }
 .mm-leaf-content { font-size: 15px; line-height: 1.7; }
 .mm-leaf-empty   { opacity: 0.65; font-style: italic; font-size: 14px; margin: 0; }
 .mm-leaf-link {
-  display:     inline-flex;
-  align-items: center;
-  gap:         6px;
-  background:  rgba(255,255,255,0.22);
-  color:       #fff;
-  padding:     10px 20px;
-  border-radius: 30px;
-  font-size:   14px;
-  font-weight: 600;
+  display:         inline-flex;
+  align-items:     center;
+  gap:             6px;
+  background:      rgba(255,255,255,0.22);
+  color:           #fff;
+  padding:         10px 20px;
+  border-radius:   30px;
+  font-size:       14px;
+  font-weight:     600;
   text-decoration: none;
-  width:       fit-content;
-  transition:  background 0.2s, transform 0.2s;
+  width:           fit-content;
+  transition:      background 0.2s, transform 0.2s;
 }
 .mm-leaf-link:hover { background: rgba(255,255,255,0.34); transform: translateX(3px); }
 
 /* ── Fehleranzeige ────────────────────────────────────────── */
 .bbs-mindmap-error {
-  padding: 24px;
-  color:   #c00;
-  font-family: var(--mm-font);
-  font-size: 14px;
-  background: #fff5f5;
+  padding:       24px;
+  color:         #c00;
+  font-family:   var(--mm-font);
+  font-size:     14px;
+  background:    #fff5f5;
   border-radius: 8px;
-  border: 1px solid #fcc;
+  border:        1px solid #fcc;
 }
 
-/* ============================================================
-   ANIMATIONEN – Zoom-Navigation
-   ============================================================ */
+/* ══════════════════════════════════════════════════════════
+   KEYFRAMES & ANIMATIONEN
+   ══════════════════════════════════════════════════════════ */
 
-/* ── Vorwärts zoomen (tiefer) ─────────────────────────────── */
+/* ── Schwebende Zentral-Karte ─────────────────────────────── */
+@keyframes mmCenterFloat {
+  from { transform: translate(-50%, -50%) translateY(0px);  }
+  to   { transform: translate(-50%, -50%) translateY(-9px); }
+}
+
+/* ── Schwebende Orbit-Karten ──────────────────────────────── */
+@keyframes mmOrbitFloat {
+  from { transform: translate(-50%, -50%) translateY(0px);   }
+  to   { transform: translate(-50%, -50%) translateY(-11px); }
+}
+
+/* ── SVG-Linien einzeichnen ───────────────────────────────── */
+@keyframes mmLineDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ── Level-Übergang vorwärts (tiefer zoomen) ──────────────── */
 @keyframes mmExitFwd {
-  0%   { opacity: 1; transform: scale(1)    translateY(0); }
-  100% { opacity: 0; transform: scale(1.12) translateY(-8px); }
+  from { opacity: 1; transform: scale(1);    }
+  to   { opacity: 0; transform: scale(1.10); }
 }
 @keyframes mmEnterFwd {
-  0%   { opacity: 0; transform: scale(0.82) translateY(20px); }
-  100% { opacity: 1; transform: scale(1)    translateY(0); }
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1);    }
 }
 
-/* ── Rückwärts zoomen (zurück) ────────────────────────────── */
+/* ── Level-Übergang rückwärts (zurück) ────────────────────── */
 @keyframes mmExitBack {
-  0%   { opacity: 1; transform: scale(1)    translateY(0); }
-  100% { opacity: 0; transform: scale(0.82) translateY(20px); }
+  from { opacity: 1; transform: scale(1);    }
+  to   { opacity: 0; transform: scale(0.90); }
 }
 @keyframes mmEnterBack {
-  0%   { opacity: 0; transform: scale(1.1)  translateY(-12px); }
-  100% { opacity: 1; transform: scale(1)    translateY(0); }
+  from { opacity: 0; transform: scale(1.10); }
+  to   { opacity: 1; transform: scale(1);    }
 }
 
-/* Inline expand / collapse */
+/* ── Inline Expand / Collapse ─────────────────────────────── */
 @keyframes mmExpand {
-  from { opacity: 0; max-height: 0;   transform: translateY(-8px); }
+  from { opacity: 0; max-height: 0;     transform: translateY(-8px); }
   to   { opacity: 1; max-height: 400px; transform: translateY(0); }
 }
 @keyframes mmCollapse {
@@ -383,36 +460,14 @@
   to   { opacity: 0; max-height: 0; }
 }
 
-/* Klassen (vom JS gesetzt) */
-.mm-exit-fwd {
-  animation: mmExitFwd calc(var(--mm-anim-speed, 360ms) * 0.45)
-             var(--mm-ease-in) forwards;
-  animation-delay: calc(var(--exit-i, 0) * 20ms);
-}
-.mm-exit-back {
-  animation: mmExitBack calc(var(--mm-anim-speed, 360ms) * 0.45)
-             var(--mm-ease-in) forwards;
-  animation-delay: calc(var(--exit-i, 0) * 20ms);
-}
-.mm-enter-fwd {
-  animation: mmEnterFwd calc(var(--mm-anim-speed, 360ms) * 0.55)
-             var(--mm-ease-spring) both;
-  animation-delay: calc(var(--enter-i, 0) * 55ms);
-}
-.mm-enter-back {
-  animation: mmEnterBack calc(var(--mm-anim-speed, 360ms) * 0.55)
-             var(--mm-ease-spring) both;
-  animation-delay: calc(var(--enter-i, 0) * 55ms);
-}
+/* ── Animationsklassen (vom JS gesetzt) ───────────────────── */
+.mm-exit-fwd  { animation: mmExitFwd  calc(var(--mm-anim-speed, 360ms) * 0.45) var(--mm-ease-in)     forwards; }
+.mm-exit-back { animation: mmExitBack calc(var(--mm-anim-speed, 360ms) * 0.45) var(--mm-ease-in)     forwards; }
+.mm-enter-fwd { animation: mmEnterFwd calc(var(--mm-anim-speed, 360ms) * 0.60) var(--mm-ease-spring) both; }
+.mm-enter-back{ animation: mmEnterBack calc(var(--mm-anim-speed, 360ms) * 0.60) var(--mm-ease-spring) both; }
 
-.mm-expanding {
-  animation: mmExpand 0.35s var(--mm-ease-out) both;
-  overflow: hidden;
-}
-.mm-collapsing {
-  animation: mmCollapse 0.25s var(--mm-ease-in) forwards;
-  overflow: hidden;
-}
+.mm-expanding  { animation: mmExpand   0.35s var(--mm-ease-out) both;     overflow: hidden; }
+.mm-collapsing { animation: mmCollapse 0.25s var(--mm-ease-in)  forwards; overflow: hidden; }
 
 /* ── Reduced Motion ───────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -420,9 +475,22 @@
   .mm-enter-fwd, .mm-enter-back,
   .mm-expanding, .mm-collapsing {
     animation:  none !important;
-    opacity:    1 !important;
+    opacity:    1   !important;
     transform:  none !important;
     max-height: none !important;
+  }
+
+  .mm-radial-center {
+    animation: none !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .mm-radial-orbit {
+    animation: none !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .mm-radial-line {
+    animation:         none !important;
+    stroke-dashoffset: 0   !important;
   }
   .mm-node-card { transition: none !important; }
 }
@@ -435,7 +503,5 @@
   outline-offset: 3px;
 }
 
-/* Elementor-Editor-Vorschau */
-.bbs-mindmap:not(.bbs-mindmap-ready) {
-  min-height: 180px;
-}
+/* Elementor-Editor-Vorschau (noch kein JS initialisiert) */
+.bbs-mindmap:not(.bbs-mindmap-ready) { min-height: 180px; }
