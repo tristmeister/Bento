@@ -242,10 +242,17 @@
 
 /* ── Orbit (umkreisende Kind-Karte) ──────────────────────── */
 .mm-radial-orbit {
-  position:  absolute;
-  width:     clamp(155px, 19vw, 230px);
-  z-index:   2;
-  animation: mmOrbitFloat 2.8s var(--float-delay, 0s) ease-in-out infinite alternate;
+  position:         absolute;
+  width:            clamp(155px, 19vw, 230px);
+  z-index:          2;
+  /* Basis-Zentrierung — von Keyframes überschrieben sobald Float startet */
+  transform:        translate(-50%, -50%);
+  /* Sanfte Bewegung vom Zentrum zur Zielposition */
+  transition:       left  0.7s cubic-bezier(0.34, 1.40, 0.64, 1),
+                    top   0.7s cubic-bezier(0.34, 1.40, 0.64, 1);
+  transition-delay: calc(var(--orbit-i, 0) * 55ms);
+  /* Float-Animation (startet erst nach Ende der Transition) */
+  animation:        mmOrbitFloat 2.8s var(--float-delay, 99s) ease-in-out infinite alternate;
 }
 
 /* Mobile: Orbits werden zu Vollbreite-Listeneinträgen */
@@ -273,7 +280,8 @@
   stroke-dasharray:  var(--line-length, 600);
   stroke-dashoffset: var(--line-length, 600);
   animation:         mmLineDraw 0.55s ease forwards;
-  animation-delay:   calc(var(--line-i, 0) * 80ms + 250ms);
+  /* Linien erscheinen wenn Orbits ankommen (Transition ~700ms + Stagger) */
+  animation-delay:   calc(var(--line-i, 0) * 70ms + 480ms);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -449,25 +457,13 @@
   to { stroke-dashoffset: 0; }
 }
 
-/* ── Level-Übergang vorwärts (tiefer zoomen) ──────────────── */
-@keyframes mmExitFwd {
-  from { opacity: 1; transform: translateY(0px);  }
-  to   { opacity: 0; transform: translateY(-20px); }
-}
-@keyframes mmEnterFwd {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0px);  }
-}
-
-/* ── Level-Übergang rückwärts (zurück) ────────────────────── */
-@keyframes mmExitBack {
-  from { opacity: 1; transform: translateY(0px);  }
-  to   { opacity: 0; transform: translateY(20px); }
-}
-@keyframes mmEnterBack {
-  from { opacity: 0; transform: translateY(-24px); }
-  to   { opacity: 1; transform: translateY(0px);   }
-}
+/* ── Level-Übergang vorwärts / rückwärts ─────────────────── */
+/* Reines Fade — kein scale/translate, damit Orbit-Transitions
+   nicht durch parallele Transform-Konflikte gestört werden.     */
+@keyframes mmExitFwd  { from { opacity: 1; } to { opacity: 0; } }
+@keyframes mmExitBack { from { opacity: 1; } to { opacity: 0; } }
+@keyframes mmEnterFwd { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mmEnterBack{ from { opacity: 0; } to { opacity: 1; } }
 
 /* ── Inline Expand / Collapse ─────────────────────────────── */
 @keyframes mmExpand {
@@ -504,8 +500,9 @@
     transform: translate(-50%, -50%) !important;
   }
   .mm-radial-orbit {
-    animation: none !important;
-    transform: translate(-50%, -50%) !important;
+    animation:   none !important;
+    transition:  none !important;
+    transform:   translate(-50%, -50%) !important;
   }
   .mm-radial-line {
     animation:         none !important;

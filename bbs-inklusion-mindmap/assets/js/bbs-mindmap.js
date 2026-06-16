@@ -122,7 +122,6 @@ class BBSMindmap {
     wrap.appendChild(svg);
 
     if (isMobile) {
-      // Mobile: vertikale Liste, keine Positionsberechnung nötig
       wrap.classList.add('mm-radial--list');
       this.stage.classList.add('mm-stage--list');
       node.children.forEach((child, i) => {
@@ -132,14 +131,12 @@ class BBSMindmap {
         wrap.appendChild(orbit);
       });
     } else {
-      // Desktop: Positionen SYNCHRON aus Stage-Dimensionen berechnen —
-      // kein rAF-Delay, kein Positions-Sprung nach dem ersten Paint.
       wrap.classList.remove('mm-radial--list');
       this.stage.classList.remove('mm-stage--list');
       this._buildRadialPositions(wrap, svg, node, color);
     }
 
-    // Enter-Animation erst nach dem nächsten Paint starten
+    // Wrapper-Einblend-Animation nach dem nächsten Paint
     requestAnimationFrame(() => {
       wrap.classList.add(enterClass);
       wrap.addEventListener('animationend', () => wrap.classList.remove(enterClass), { once: true });
@@ -148,9 +145,18 @@ class BBSMindmap {
     return wrap;
   }
 
-  /* Positionen synchron berechnen und Orbits + SVG direkt setzen */
+  /*
+   * Kern-Logik: Orbits starten am Zentrum und fliegen per CSS-Transition
+   * zu ihren Zielpositionen — kein Positions-Sprung, keine Hackigkeit.
+   *
+   * Ablauf:
+   *  1. Positionen berechnen
+   *  2. Alle Orbits bei (cx, cy) erstellen → browser registriert Startzustand
+   *  3. void wrap.offsetHeight → erzwingt Reflow → Startzustand eingefroren
+   *  4. Zielpositionen setzen → CSS-Transition startet automatisch
+   *  5. SVG-Linien verzögert zeichnen (nach Orbit-Ankunft)
+   */
   _buildRadialPositions(wrap, svg, node, color) {
-    // offsetWidth liest Dimensionen synchron aus (erzwingt Layout wenn nötig)
     const ww = this.stage.offsetWidth;
     const wh = this.stage.offsetHeight
                || Math.max(420, window.innerHeight - (this.navbar?.offsetHeight || 58));
@@ -166,29 +172,48 @@ class BBSMindmap {
     const maxR    = Math.min(ww * 0.41, wh * 0.41);
     const radius  = Math.max(minR, Math.min(maxR, 320));
 
-    svg.setAttribute('width',   ww);
-    svg.setAttribute('height',  wh);
+    // Zielpositionen vorberechnen
+    const targets = node.children.map((_, i) => {
+      const rad = ((360 / count) * i - 90) * Math.PI / 180;
+      return {
+        x: Math.round(cx + radius * Math.cos(rad)),
+        y: Math.round(cy + radius * Math.sin(rad)),
+      };
+    });
+
+    svg.setAttribute('width', ww);
+    svg.setAttribute('height', wh);
     svg.setAttribute('viewBox', `0 0 ${ww} ${wh}`);
 
+    // Schritt 1: Orbits AM ZENTRUM erstellen
     node.children.forEach((child, i) => {
-      const angleDeg = (360 / count) * i - 90;
-      const angleRad = angleDeg * Math.PI / 180;
-      const x = Math.round(cx + radius * Math.cos(angleRad));
-      const y = Math.round(cy + radius * Math.sin(angleRad));
-
-      // Orbit mit bereits gesetztem left/top → kein Positions-Sprung
       const orbit = this._el('div', 'mm-radial-orbit');
-      orbit.style.left = x + 'px';
-      orbit.style.top  = y + 'px';
-      orbit.style.setProperty('--float-delay', (i * 0.55 % 2.8).toFixed(2) + 's');
+      orbit.style.left = cx + 'px';   // Startposition = Zentrum
+      orbit.style.top  = cy + 'px';
+      orbit.style.setProperty('--orbit-i', i);
+      // Float-Animation erst nach Ende der Transition starten (0.7s + Stagger)
+      const floatDelay = 0.72 + i * 0.065 + (i * 0.4 % 1.4);
+      orbit.style.setProperty('--float-delay', floatDelay.toFixed(2) + 's');
       orbit.appendChild(this._buildNodeCard(child, color, i));
       wrap.appendChild(orbit);
+    });
 
-      // SVG-Verbindungslinie
-      const len  = Math.round(Math.hypot(x - cx, y - cy));
+    // Schritt 2: Reflow erzwingen → Browser registriert Zentrum als Startzustand
+    void wrap.offsetHeight;
+
+    // Schritt 3: Zielpositionen setzen → CSS-Transition übernimmt die Bewegung
+    const orbits = wrap.querySelectorAll('.mm-radial-orbit');
+    orbits.forEach((orbit, i) => {
+      orbit.style.left = targets[i].x + 'px';
+      orbit.style.top  = targets[i].y + 'px';
+    });
+
+    // Schritt 4: SVG-Linien zeichnen (verzögert, damit sie bei Orbit-Ankunft erscheinen)
+    targets.forEach((pos, i) => {
+      const len  = Math.round(Math.hypot(pos.x - cx, pos.y - cy));
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', cx); line.setAttribute('y1', cy);
-      line.setAttribute('x2', x);  line.setAttribute('y2', y);
+      line.setAttribute('x2', pos.x); line.setAttribute('y2', pos.y);
       line.style.setProperty('--line-length', len);
       line.style.setProperty('--line-i', i);
       line.classList.add('mm-radial-line');
@@ -220,7 +245,7 @@ class BBSMindmap {
     return card;
   }
 
-  /* Resize-Handler: Positionen neu berechnen */
+  /* Resize: Transition kurz deaktivieren für sofortige Neupositionierung */
   _repositionIfNeeded() {
     const radial = this.stage.querySelector('.mm-radial');
     if (!radial) return;
@@ -244,10 +269,12 @@ class BBSMindmap {
     const wh = this.stage.offsetHeight;
     if (!ww || !wh || !orbits.length) return;
 
+    // Transition temporär deaktivieren → kein langsames Gleiten beim Resize
+    orbits.forEach(o => (o.style.transition = 'none'));
+
     const cx    = ww / 2;
     const cy    = wh / 2;
     const count = orbits.length;
-
     const centerW = Math.min(340, ww * 0.36);
     const childW  = Math.min(230, ww * 0.20);
     const minR    = centerW / 2 + childW / 2 + 28;
@@ -255,17 +282,16 @@ class BBSMindmap {
     const radius  = Math.max(minR, Math.min(maxR, 320));
 
     if (svg) {
-      svg.setAttribute('width',   ww);
-      svg.setAttribute('height',  wh);
+      svg.setAttribute('width', ww);
+      svg.setAttribute('height', wh);
       svg.setAttribute('viewBox', `0 0 ${ww} ${wh}`);
       svg.innerHTML = '';
     }
 
     orbits.forEach((orbit, i) => {
-      const angleDeg = (360 / count) * i - 90;
-      const angleRad = angleDeg * Math.PI / 180;
-      const x = Math.round(cx + radius * Math.cos(angleRad));
-      const y = Math.round(cy + radius * Math.sin(angleRad));
+      const rad = ((360 / count) * i - 90) * Math.PI / 180;
+      const x   = Math.round(cx + radius * Math.cos(rad));
+      const y   = Math.round(cy + radius * Math.sin(rad));
 
       orbit.style.left = x + 'px';
       orbit.style.top  = y + 'px';
@@ -281,6 +307,9 @@ class BBSMindmap {
         svg.appendChild(line);
       }
     });
+
+    // Transition nach einem Frame wieder aktivieren
+    requestAnimationFrame(() => orbits.forEach(o => (o.style.transition = '')));
   }
 
   /* ── Knoten-Karte ─────────────────────────────────────────── */
@@ -424,7 +453,6 @@ class BBSMindmap {
     }
   }
 
-  /* ── Mobile Fullscreen ────────────────────────────────────── */
   _applyMobileFullscreen() {
     if (!this.cfg.mobileFullscreen) return;
     this.container.classList.toggle('mm-mobile-fullscreen', window.innerWidth < 768);
@@ -452,7 +480,6 @@ class BBSMindmap {
   }
 }
 
-/* Auto-init für alle .bbs-mindmap[data-config] auf der Seite */
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.bbs-mindmap[data-config]').forEach(el => {
     try {
