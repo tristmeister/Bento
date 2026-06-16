@@ -97,12 +97,12 @@ class Widget extends Widget_Base {
         ] );
 
         $this->add_control( 'mobile_fullscreen', [
-            'label'       => 'Vollbild auf Mobile',
+            'label'       => 'Vollbild auf Mobile (fixed)',
             'type'        => Controls_Manager::SWITCHER,
-            'default'     => 'yes',
+            'default'     => '',
             'label_on'    => 'Ja',
             'label_off'   => 'Nein',
-            'description' => 'Unterhalb von 768 px nimmt das Widget die gesamte Bildschirmhöhe ein.',
+            'description' => 'Legt das Widget als fixierten Vollbild-Layer über die Seite. Standard: Aus – das Widget bleibt ein normaler scrollbarer Block.',
         ] );
 
         $this->end_controls_section();
@@ -125,8 +125,8 @@ class Widget extends Widget_Base {
                 'vh' => [ 'min' => 30,  'max' => 100  ],
             ],
             'default'         => [ 'unit' => 'vh', 'size' => 82 ],
-            'tablet_default'  => [ 'unit' => 'vh', 'size' => 80 ],
-            'mobile_default'  => [ 'unit' => 'vh', 'size' => 90 ],
+            'tablet_default'  => [ 'unit' => 'vh', 'size' => 78 ],
+            'mobile_default'  => [ 'unit' => 'vh', 'size' => 65 ],
             'selectors'  => [ '{{WRAPPER}} .bbs-mindmap' => 'min-height: {{SIZE}}{{UNIT}};' ],
         ] );
 

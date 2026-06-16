@@ -11,7 +11,7 @@ class BBSMindmap {
       showBreadcrumb:   true,
       showHomeBtn:      true,
       clickBgBack:      true,
-      mobileFullscreen: true,
+      mobileFullscreen: false,
       animSpeed:        360,
     }, config);
 

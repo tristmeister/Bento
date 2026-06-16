@@ -26,12 +26,31 @@
   flex-direction: column;
 }
 
+/* Optionales Fullscreen-Feature – standardmäßig DEAKTIVIERT.
+   Nur aktiv wenn mobileFullscreen:true im Widget-Panel gesetzt wird. */
 .bbs-mindmap.mm-mobile-fullscreen {
   position:      fixed;
   inset:         0;
   z-index:       9999;
   min-height:    100dvh;
   border-radius: 0 !important;
+}
+
+/* Mobile: Widget bleibt normaler Seiten-Block, scrollbar */
+@media (max-width: 639px) {
+  .bbs-mindmap:not(.mm-mobile-fullscreen) {
+    min-height:  60vh;
+    max-height:  80vh;
+    overflow:    hidden;
+  }
+
+  /* Interner Scroll des Listeninhalts */
+  .mm-stage.mm-stage--list {
+    overflow-y:                auto;
+    overflow-x:                hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior:        contain;
+  }
 }
 
 /* ── Navbar ───────────────────────────────────────────────── */
