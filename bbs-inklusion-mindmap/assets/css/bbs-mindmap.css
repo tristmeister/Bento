@@ -432,22 +432,22 @@
 
 /* ── Level-Übergang vorwärts (tiefer zoomen) ──────────────── */
 @keyframes mmExitFwd {
-  from { opacity: 1; transform: scale(1);    }
-  to   { opacity: 0; transform: scale(1.10); }
+  from { opacity: 1; transform: translateY(0px);  }
+  to   { opacity: 0; transform: translateY(-20px); }
 }
 @keyframes mmEnterFwd {
-  from { opacity: 0; transform: scale(0.88); }
-  to   { opacity: 1; transform: scale(1);    }
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0px);  }
 }
 
 /* ── Level-Übergang rückwärts (zurück) ────────────────────── */
 @keyframes mmExitBack {
-  from { opacity: 1; transform: scale(1);    }
-  to   { opacity: 0; transform: scale(0.90); }
+  from { opacity: 1; transform: translateY(0px);  }
+  to   { opacity: 0; transform: translateY(20px); }
 }
 @keyframes mmEnterBack {
-  from { opacity: 0; transform: scale(1.10); }
-  to   { opacity: 1; transform: scale(1);    }
+  from { opacity: 0; transform: translateY(-24px); }
+  to   { opacity: 1; transform: translateY(0px);   }
 }
 
 /* ── Inline Expand / Collapse ─────────────────────────────── */

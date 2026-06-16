@@ -4,9 +4,6 @@
  */
 class BBSMindmap {
 
-  /* ──────────────────────────────────────────────────────────
-     Konstruktor
-  ────────────────────────────────────────────────────────── */
   constructor(container, config = {}) {
     this.container = container;
     this.cfg = Object.assign({
@@ -33,9 +30,7 @@ class BBSMindmap {
     });
   }
 
-  /* ──────────────────────────────────────────────────────────
-     DOM-Gerüst
-  ────────────────────────────────────────────────────────── */
+  /* ── DOM-Gerüst ───────────────────────────────────────────── */
   _buildShell() {
     this.container.classList.add('bbs-mindmap-ready');
     this.container.style.setProperty('--mm-anim-speed', this.cfg.animSpeed + 'ms');
@@ -76,9 +71,7 @@ class BBSMindmap {
     this.container.appendChild(this.stage);
   }
 
-  /* ──────────────────────────────────────────────────────────
-     Level-Navigation
-  ────────────────────────────────────────────────────────── */
+  /* ── Level-Navigation ─────────────────────────────────────── */
   _showLevel(node, direction = 'forward') {
     if (this.animating) return;
     this.animating = true;
@@ -115,39 +108,92 @@ class BBSMindmap {
     }, delay);
   }
 
-  /* ──────────────────────────────────────────────────────────
-     Radiales Layout
-  ────────────────────────────────────────────────────────── */
+  /* ── Radiales Layout ──────────────────────────────────────── */
   _buildRadialScreen(node, enterClass) {
-    const wrap  = this._el('div', 'mm-radial');
-    const color = node.color || this._resolveColor(node);
+    const wrap     = this._el('div', 'mm-radial');
+    const color    = node.color || this._resolveColor(node);
+    const isMobile = window.innerWidth < 640;
 
-    // Zentrale Karte
     wrap.appendChild(this._buildCenterCard(node));
 
-    // SVG-Overlay für Verbindungslinien
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.classList.add('mm-radial-svg');
     svg.setAttribute('aria-hidden', 'true');
     wrap.appendChild(svg);
 
-    // Kind-Orbits (zunächst unsichtbar bis zur Positionierung)
-    node.children.forEach((child, i) => {
-      const orbit = this._el('div', 'mm-radial-orbit');
-      orbit.style.visibility = 'hidden';
-      orbit.style.setProperty('--float-delay', (i * 0.55 % 2.8).toFixed(2) + 's');
-      orbit.appendChild(this._buildNodeCard(child, color, i));
-      wrap.appendChild(orbit);
-    });
+    if (isMobile) {
+      // Mobile: vertikale Liste, keine Positionsberechnung nötig
+      wrap.classList.add('mm-radial--list');
+      this.stage.classList.add('mm-stage--list');
+      node.children.forEach((child, i) => {
+        const orbit = this._el('div', 'mm-radial-orbit');
+        orbit.style.setProperty('--float-delay', (i * 0.55 % 2.8).toFixed(2) + 's');
+        orbit.appendChild(this._buildNodeCard(child, color, i));
+        wrap.appendChild(orbit);
+      });
+    } else {
+      // Desktop: Positionen SYNCHRON aus Stage-Dimensionen berechnen —
+      // kein rAF-Delay, kein Positions-Sprung nach dem ersten Paint.
+      wrap.classList.remove('mm-radial--list');
+      this.stage.classList.remove('mm-stage--list');
+      this._buildRadialPositions(wrap, svg, node, color);
+    }
 
-    // Nach erstem Paint positionieren, dann Enter-Animation starten
+    // Enter-Animation erst nach dem nächsten Paint starten
     requestAnimationFrame(() => {
-      this._positionRadial(wrap, svg);
       wrap.classList.add(enterClass);
       wrap.addEventListener('animationend', () => wrap.classList.remove(enterClass), { once: true });
     });
 
     return wrap;
+  }
+
+  /* Positionen synchron berechnen und Orbits + SVG direkt setzen */
+  _buildRadialPositions(wrap, svg, node, color) {
+    // offsetWidth liest Dimensionen synchron aus (erzwingt Layout wenn nötig)
+    const ww = this.stage.offsetWidth;
+    const wh = this.stage.offsetHeight
+               || Math.max(420, window.innerHeight - (this.navbar?.offsetHeight || 58));
+    if (!ww || !wh) return;
+
+    const cx    = ww / 2;
+    const cy    = wh / 2;
+    const count = node.children.length;
+
+    const centerW = Math.min(340, ww * 0.36);
+    const childW  = Math.min(230, ww * 0.20);
+    const minR    = centerW / 2 + childW / 2 + 28;
+    const maxR    = Math.min(ww * 0.41, wh * 0.41);
+    const radius  = Math.max(minR, Math.min(maxR, 320));
+
+    svg.setAttribute('width',   ww);
+    svg.setAttribute('height',  wh);
+    svg.setAttribute('viewBox', `0 0 ${ww} ${wh}`);
+
+    node.children.forEach((child, i) => {
+      const angleDeg = (360 / count) * i - 90;
+      const angleRad = angleDeg * Math.PI / 180;
+      const x = Math.round(cx + radius * Math.cos(angleRad));
+      const y = Math.round(cy + radius * Math.sin(angleRad));
+
+      // Orbit mit bereits gesetztem left/top → kein Positions-Sprung
+      const orbit = this._el('div', 'mm-radial-orbit');
+      orbit.style.left = x + 'px';
+      orbit.style.top  = y + 'px';
+      orbit.style.setProperty('--float-delay', (i * 0.55 % 2.8).toFixed(2) + 's');
+      orbit.appendChild(this._buildNodeCard(child, color, i));
+      wrap.appendChild(orbit);
+
+      // SVG-Verbindungslinie
+      const len  = Math.round(Math.hypot(x - cx, y - cy));
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+      line.setAttribute('x2', x);  line.setAttribute('y2', y);
+      line.style.setProperty('--line-length', len);
+      line.style.setProperty('--line-i', i);
+      line.classList.add('mm-radial-line');
+      svg.appendChild(line);
+    });
   }
 
   _buildCenterCard(node) {
@@ -174,72 +220,70 @@ class BBSMindmap {
     return card;
   }
 
-  _positionRadial(wrap, svg) {
-    const orbits   = wrap.querySelectorAll('.mm-radial-orbit');
-    const count    = orbits.length;
+  /* Resize-Handler: Positionen neu berechnen */
+  _repositionIfNeeded() {
+    const radial = this.stage.querySelector('.mm-radial');
+    if (!radial) return;
+
     const isMobile = window.innerWidth < 640;
+    const orbits   = radial.querySelectorAll('.mm-radial-orbit');
+    const svg      = radial.querySelector('.mm-radial-svg');
 
     if (isMobile) {
-      wrap.classList.add('mm-radial--list');
+      radial.classList.add('mm-radial--list');
       this.stage.classList.add('mm-stage--list');
-      orbits.forEach(o => (o.style.visibility = ''));
+      orbits.forEach(o => { o.style.left = ''; o.style.top = ''; });
+      if (svg) svg.innerHTML = '';
       return;
     }
 
-    wrap.classList.remove('mm-radial--list');
+    radial.classList.remove('mm-radial--list');
     this.stage.classList.remove('mm-stage--list');
 
-    const ww = wrap.offsetWidth;
-    const wh = wrap.offsetHeight;
-    if (!ww || !wh || !count) return;
+    const ww = this.stage.offsetWidth;
+    const wh = this.stage.offsetHeight;
+    if (!ww || !wh || !orbits.length) return;
 
-    const cx = ww / 2;
-    const cy = wh / 2;
+    const cx    = ww / 2;
+    const cy    = wh / 2;
+    const count = orbits.length;
 
-    // Radius adaptiv: Center-Karte und Kind-Karten dürfen sich nicht überlappen
     const centerW = Math.min(340, ww * 0.36);
     const childW  = Math.min(230, ww * 0.20);
     const minR    = centerW / 2 + childW / 2 + 28;
     const maxR    = Math.min(ww * 0.41, wh * 0.41);
     const radius  = Math.max(minR, Math.min(maxR, 320));
 
-    svg.setAttribute('width',   ww);
-    svg.setAttribute('height',  wh);
-    svg.setAttribute('viewBox', `0 0 ${ww} ${wh}`);
-    svg.innerHTML = '';
+    if (svg) {
+      svg.setAttribute('width',   ww);
+      svg.setAttribute('height',  wh);
+      svg.setAttribute('viewBox', `0 0 ${ww} ${wh}`);
+      svg.innerHTML = '';
+    }
 
     orbits.forEach((orbit, i) => {
-      const angleDeg = (360 / count) * i - 90; // −90° = oben
+      const angleDeg = (360 / count) * i - 90;
       const angleRad = angleDeg * Math.PI / 180;
       const x = Math.round(cx + radius * Math.cos(angleRad));
       const y = Math.round(cy + radius * Math.sin(angleRad));
 
-      orbit.style.left       = x + 'px';
-      orbit.style.top        = y + 'px';
-      orbit.style.visibility = '';
+      orbit.style.left = x + 'px';
+      orbit.style.top  = y + 'px';
 
-      // SVG-Verbindungslinie
-      const len  = Math.round(Math.hypot(x - cx, y - cy));
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', cx); line.setAttribute('y1', cy);
-      line.setAttribute('x2', x);  line.setAttribute('y2', y);
-      line.style.setProperty('--line-length', len);
-      line.style.setProperty('--line-i', i);
-      line.classList.add('mm-radial-line');
-      svg.appendChild(line);
+      if (svg) {
+        const len  = Math.round(Math.hypot(x - cx, y - cy));
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+        line.setAttribute('x2', x);  line.setAttribute('y2', y);
+        line.style.setProperty('--line-length', len);
+        line.style.setProperty('--line-i', i);
+        line.classList.add('mm-radial-line');
+        svg.appendChild(line);
+      }
     });
   }
 
-  _repositionIfNeeded() {
-    const radial = this.stage.querySelector('.mm-radial');
-    if (!radial) return;
-    const svg = radial.querySelector('.mm-radial-svg');
-    if (svg) this._positionRadial(radial, svg);
-  }
-
-  /* ──────────────────────────────────────────────────────────
-     Knoten-Karte
-  ────────────────────────────────────────────────────────── */
+  /* ── Knoten-Karte ─────────────────────────────────────────── */
   _buildNodeCard(node, parentColor, index) {
     const hasChildren  = !!(node.children?.length);
     const hasContent   = !!(node.content);
@@ -292,9 +336,7 @@ class BBSMindmap {
     return card;
   }
 
-  /* ──────────────────────────────────────────────────────────
-     Leaf Panel
-  ────────────────────────────────────────────────────────── */
+  /* ── Leaf Panel ───────────────────────────────────────────── */
   _buildLeafPanel(node) {
     const color = this._resolveColor(node);
     const panel = this._el('div', 'mm-leaf-panel');
@@ -331,9 +373,7 @@ class BBSMindmap {
     card.classList.add('mm-card-expanded');
   }
 
-  /* ──────────────────────────────────────────────────────────
-     Navigations-API
-  ────────────────────────────────────────────────────────── */
+  /* ── Navigations-API ──────────────────────────────────────── */
   goBack() {
     if (this.animating || this.stack.length === 0) return;
     const prev = this.stack.pop();
@@ -384,17 +424,13 @@ class BBSMindmap {
     }
   }
 
-  /* ──────────────────────────────────────────────────────────
-     Mobile Fullscreen
-  ────────────────────────────────────────────────────────── */
+  /* ── Mobile Fullscreen ────────────────────────────────────── */
   _applyMobileFullscreen() {
     if (!this.cfg.mobileFullscreen) return;
     this.container.classList.toggle('mm-mobile-fullscreen', window.innerWidth < 768);
   }
 
-  /* ──────────────────────────────────────────────────────────
-     Hilfsfunktionen
-  ────────────────────────────────────────────────────────── */
+  /* ── Helpers ──────────────────────────────────────────────── */
   _resolveColor(node) {
     if (node?.color) return node.color;
     for (let i = this.stack.length - 1; i >= 0; i--) {
